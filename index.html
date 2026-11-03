@@ -317,7 +317,7 @@
         let currentUnitIndex = 0;
         let unitsData = [];
         let globalSuggestions = {};
-        let suggestionList = []; // Array storage for fallback matching
+        let suggestionList = [];
         
         // Target Sheet ID Embedded directly
         const SHEET_ID = "1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc";
@@ -424,22 +424,21 @@
             globalSuggestions = {};
             suggestionList = [];
             
-            rows.forEach((r, index) => {
-                if (index === 0) return; // Skip Header
-                if (r.length >= 1) {
-                    const rawKey = r[0] || '';
-                    const key = rawKey.toString().replace(/[^0-9]/g, '').trim();
-                    const val = r[1] ? r[1].replace(/^"|"$/g, '').trim() : (r[0] ? r[0].replace(/^"|"$/g, '').trim() : '');
-                    
-                    if (val) {
-                        const sugIndex = (suggestionList.length + 1).toString();
-                        if (key) {
-                            globalSuggestions[key] = val;
-                        }
-                        // Also store by index fallback
-                        globalSuggestions[sugIndex] = globalSuggestions[sugIndex] || val;
-                        suggestionList.push(val);
-                    }
+            rows.forEach((r) => {
+                if (!r || r.length === 0) return;
+                
+                // Read Column A as Recommendation Key (1, 2, 3, etc.)
+                const rawKey = r[0] !== undefined ? r[0] : '';
+                const key = rawKey.toString().replace(/[^0-9]/g, '').trim();
+                
+                // Read Column B as Recommendation Content Text
+                let val = '';
+                if (r.length > 1 && r[1] !== undefined) {
+                    val = r[1].toString().trim();
+                }
+
+                if (key && val) {
+                    globalSuggestions[key] = val;
                 }
             });
         }
@@ -451,7 +450,7 @@
             let currentUnit = null;
 
             rows.forEach((r, index) => {
-                if (index < 1) return; // Skip header row
+                if (index < 1) return; // Skip header row of Sheet3
                 
                 const seq = r[0] || '';
                 const unitName = r[1] || '';
@@ -468,7 +467,7 @@
                         id: parsedUnits.length + 1,
                         seq: seq || (parsedUnits.length + 1),
                         name: unitName,
-                        colHList: [], // Store all collected colH values
+                        colHList: [],
                         colH: '',
                         subUnits: []
                     };
@@ -509,184 +508,26 @@
                 unitsData = parsedUnits;
             }
         }
+                    }
+                    
+                    // Fallback to Col A text if no other col has text
+                    if (!val && r[0]) {
+                        val = r[0].replace(/^"|"$/g, '').trim();
+                    }
 
-        // Backup Demo Data (Matches exactly 32 units)
-        function generateDemoData() {
-            globalSuggestions = {
-                "1": "เห็นควรให้ส่วนงานสอบทานข้อมูลและเอกสารหลักฐานที่เกี่ยวข้องกับรายการครุภัณฑ์ทั้งหมดที่มีสถานะหรือรายละเอียดไม่ตรงกับรายการในระบบทะเบียนสินทรัพย์ของมหาวิทยาลัย",
-                "2": "ให้ส่วนงานตรวจสอบรายการครุภัณฑ์ที่บันทึกซ้ำซ้อนในระบบ และดำเนินการปรับปรุงข้อมูลบัญชีให้ถูกต้อง",
-                "3": "เห็นควรให้ส่วนงานที่สำรวจและยืนยันข้อมูลสภาพครุภัณฑ์ไม่ครบถ้วน เร่งดำเนินการสำรวจและยืนยันข้อมูลสภาพครุภัณฑ์ที่ยังไม่ได้ดำเนินการ และปรับปรุงข้อมูลสภาพครุภัณฑ์ในระบบทะเบียนสินทรัพย์ของมหาวิทยาลัยให้ถูกต้องและเป็นปัจจุบัน",
-                "4": "ให้ส่วนงานระบุชื่อ-สกุลผู้ครอบครองครุภัณฑ์ให้เป็นปัจจุบันและครบถ้วน",
-                "5": "ให้ส่วนงานจัดทำหลักฐานการยืม-คืนครุภัณฑ์ให้ครบถ้วนสมบูรณ์ตามระเบียบ",
-                "6": "ให้ส่วนงานติดตามครุภัณฑ์ที่ยืมไปใช้งานให้กลับคืนตามกำหนดเวลา"
-            };
-
-            const full32Units = [
-                { id: 1, name: "คณะเกษตรศาสตร์", colH: "1, 2, 3, 6", colHList: ["1", "2", "3", "6"], subUnits: [
-                    { subName: "08-เกษตรฯ", existState: "จำหน่ายแล้ว 9 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 88 รายการ" },
-                    { subName: "63-ATSC ศูนย์บริการวิชาการและถ่ายทอดเทคโนโลยีการเกษตร", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 4 รายการ" },
-                    { subName: "44-ศูนย์วิจัยเทคโนโลยีหลังการเก็บเกี่ยว", existState: "บันทึกรายการซ้ำ 3 รายการ เนื่องจากโอนครุภัณฑ์ไปยังบัญชีคณะฯ แล้ว แต่ยังไม่ได้ปรับปรุงรายการในบัญชีศูนย์ฯ ทำให้รายการครุภัณฑ์ยังค้างอยู่ในระบบ ซึ่งซ้ำซ้อนกับรายการในบัญชีคณะฯ", conditionState: "-", ownerState: "-", borrowState: "-" }
-                ]},
-                { id: 2, name: "คณะเทคนิคการแพทย์", colH: "5", colHList: ["5"], subUnits: [
-                    { subName: "11-เทคนิคฯ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 105 รายการ เจ้าหน้าที่ชี้แจงว่า มีการควบคุมการนำไปใช้งานและติดตามการนำส่งคืน โดยเจ้าหน้าที่ได้รับมอบหมายให้รับผิดชอบครุภัณฑ์นั้น ทั้งนี้ คณะฯ รับทราบแนวปฏิบัติและได้ดำเนินการปรับปรุงกระบวนการยืม-คืนตามกฎระเบียบแล้ว" },
-                    { subName: "25-AMS.CSC.ศูนย์บริการเทคนิคการแพทย์คลินิก", existState: "-", conditionState: "-", ownerState: "-", borrowState: "หลักฐานการยืม-คืน ไม่ระบุระยะเวลายืม-คืน" }
-                ]},
-                { id: 3, name: "คณะเภสัชศาสตร์", colH: "1, 3", colHList: ["1", "3"], subUnits: [
-                    { subName: "10-เภสัชฯ", existState: "จำหน่ายแล้ว 13 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
-                    { subName: "28-เภสัชชุมชน", existState: "-", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 2 รายการ", ownerState: "-", borrowState: "-" }
-                ]},
-                { id: 4, name: "คณะเศรษฐศาสตร์", colH: "6", colHList: ["6"], subUnits: [
-                    { subName: "16-เศรษฐศาสตร์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 98 รายการ" }
-                ]},
-                { id: 5, name: "คณะแพทยศาสตร์", colH: "1, 2, 4, 6", colHList: ["1", "2", "4", "6"], subUnits: [
-                    { subName: "07-แพทย์ฯ", existState: "จำหน่ายแล้ว 53 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
-                    { subName: "29-ศรีพัฒน์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 172 รายการ" },
-                    { subName: "59 CRC ศูนย์วิจัยทางคลินิก", existState: "ไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "-", ownerState: "ระบุผู้ครอบครองไม่ครบถ้วน", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 2 รายการ" },
-                    { subName: "68 CMEX ศูนย์ความเป็นเลิศ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 39 รายการ" }
-                ]}
-            ];
-
-            unitsData = full32Units;
-        }
-
-        // Render Sidebar Unit Selection
-        function renderSidebarList(filterText = '') {
-            const listEl = document.getElementById('unit-list');
-            listEl.innerHTML = '';
-
-            unitsData.forEach((unit, idx) => {
-                if (filterText && !unit.name.toLowerCase().includes(filterText.toLowerCase())) return;
-
-                const btn = document.createElement('button');
-                btn.onclick = () => selectUnit(idx);
-                
-                const isSelected = idx === currentUnitIndex;
-                btn.className = `w-full text-left p-2.5 rounded-lg text-xs transition flex items-center justify-between ${
-                    isSelected 
-                        ? 'bg-slate-900 text-white font-semibold shadow-sm' 
-                        : 'text-slate-700 hover:bg-slate-100 bg-white border border-slate-100'
-                }`;
-
-                btn.innerHTML = `
-                    <div class="truncate pr-2">
-                        <span class="block ${isSelected ? 'text-white' : 'text-slate-900'}">${unit.id || (idx+1)}. ${unit.name}</span>
-                        <span class="text-[10px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}">ข้อเสนอแนะ: ${unit.colH ? '[ ข้อ ' + unit.colH + ' ]' : '[ ไม่มี ]'}</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-[10px] ${isSelected ? 'text-white' : 'text-slate-300'}"></i>
-                `;
-
-                listEl.appendChild(btn);
-            });
-        }
-
-        // Filter Sidebar Units
-        function filterUnits() {
-            const query = document.getElementById('search-unit').value;
-            renderSidebarList(query);
-        }
-
-        // Select Unit & Display Report
-        function selectUnit(index) {
-            if (!unitsData[index]) return;
-            currentUnitIndex = index;
-            renderSidebarList(document.getElementById('search-unit').value);
-            
-            const unit = unitsData[index];
-            
-            // Display Unit Name (16pt)
-            document.getElementById('report-unit-name').innerText = unit.name;
-
-            // Populate Table Rows (10pt body)
-            const tableBody = document.getElementById('table-items-body');
-            tableBody.innerHTML = '';
-
-            unit.subUnits.forEach((sub) => {
-                const tr = document.createElement('tr');
-                
-                tr.innerHTML = `
-                    <td class="col-dept-cell" style="font-weight: 500;">${sub.subName}</td>
-                    <td class="col-content-cell">${sub.existState}</td>
-                    <td class="col-content-cell">${sub.conditionState}</td>
-                    <td class="col-content-cell">${sub.ownerState}</td>
-                    <td class="col-content-cell">${sub.borrowState}</td>
-                `;
-                tableBody.appendChild(tr);
-            });
-
-            // Extract all requested suggestion numbers for this unit
-            let selectedNumbers = unit.colHList || [];
-            if (selectedNumbers.length === 0 && unit.colH) {
-                const matches = String(unit.colH).match(/\d+/g);
-                if (matches) {
-                    selectedNumbers = matches.map(num => String(parseInt(num, 10)));
+                    if (val) {
+                        const sugIndex = (suggestionList.length + 1).toString();
+                        if (key) {
+                            globalSuggestions[key] = val;
+                        }
+                        // Also store by index fallback
+                        globalSuggestions[sugIndex] = globalSuggestions[sugIndex] || val;
+                        suggestionList.push(val);
+                    }
                 }
-            }
-
-            // Categorize Suggestions based on rules
-            renderCategorizedSuggestions(selectedNumbers);
+            });
         }
 
-        // Categorize & Render Suggestions into 4 Specified Topics
-        function renderCategorizedSuggestions(numbers) {
-            const t1Nums = numbers.filter(n => n === '1' || n === '2');
-            const t2Nums = numbers.filter(n => n === '3');
-            const t3Nums = numbers.filter(n => n === '4');
-            const t4Nums = numbers.filter(n => n === '5' || n === '6');
-
-            const has1 = renderTopicContent('topic-1-card', 'topic-1-content', t1Nums);
-            const has2 = renderTopicContent('topic-2-card', 'topic-2-content', t2Nums);
-            const has3 = renderTopicContent('topic-3-card', 'topic-3-content', t3Nums);
-            const has4 = renderTopicContent('topic-4-card', 'topic-4-content', t4Nums);
-
-            const mainWrapper = document.getElementById('main-suggestions-wrapper');
-            if (has1 || has2 || has3 || has4) {
-                mainWrapper.classList.remove('hidden');
-            } else {
-                mainWrapper.classList.add('hidden');
-            }
-        }
-
-        // Helper to Render Each Topic Box & Hide completely if Empty
-        function renderTopicContent(cardId, elementId, numsList) {
-            const card = document.getElementById(cardId);
-            const container = document.getElementById(elementId);
-            container.innerHTML = '';
-
-            // Filter codes that actually exist in globalSuggestions
-            const validCodes = numsList.filter(n => globalSuggestions[n] !== undefined && globalSuggestions[n] !== '');
-
-            // Hide section completely if there are no valid suggestions for this topic
-            if (validCodes.length === 0) {
-                card.classList.add('hidden');
-                return false;
-            }
-
-            card.classList.remove('hidden');
-
-            if (validCodes.length === 1) {
-                const num = validCodes[0];
-                const text = globalSuggestions[num];
-                container.innerHTML = `<p class="text-content-body">${text}</p>`;
-            } else {
-                const listHtml = validCodes.map((num, i) => {
-                    const text = globalSuggestions[num];
-                    return `<div class="text-content-body-list mb-1"><span class="font-bold mr-1.5">${i + 1}.</span>${text}</div>`;
-                }).join('');
-                container.innerHTML = listHtml;
-            }
-
-            return true;
-        }
-
-        // Export Single Unit Page using Browser Native Print API
-        function exportToPDF() {
-            window.print();
-        }
-
-        // App Initializer
-        window.onload = function() {
-            fetchSheetData();
-        };
-    </script>
-</body>
-</html>
+        // Parse Sheet 3 CSV Data
+        function parseSheet3CSV(csvText) {
+<!-- ... existing code -->
