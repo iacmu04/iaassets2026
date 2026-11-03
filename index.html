@@ -123,21 +123,23 @@
         </aside>
 
         <!-- Main Display Card (This part gets exported to PDF) -->
-        <section class="flex-grow">
-            <!-- Alert Banner for Sheet Link Setup (If using demo data) -->
-            <div id="demo-alert" class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800 text-sm no-print">
-                <i class="fa-solid fa-triangle-exclamation text-amber-500 text-lg mt-0.5"></i>
-                <div class="flex-grow">
-                    <p class="font-semibold">กำลังแสดงผลข้อมูลตัวอย่าง (Demo Data)</p>
-                    <p class="text-xs text-amber-700 mt-0.5">คุณสามารถกดปุ่ม <b>"ตั้งค่า Link Sheet"</b> ด้านบนเพื่อระบุ Google Sheet ID หรือเลือกเชื่อมต่อ API เพื่ออ่านข้อมูลจริงแบบ Real-time</p>
+    <section class="flex-grow">
+        <!-- Status Notification Banner -->
+        <div id="status-alert" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-blue-900 text-sm no-print">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-cloud-arrow-down text-blue-600 text-lg" id="status-icon"></i>
+                <div>
+                    <p class="font-semibold" id="status-title">เชื่อมต่อ Google Sheets แบบ Real-time</p>
+                    <p class="text-xs text-blue-700" id="status-desc">ดึงข้อมูลสดผ่าน Google Spreadsheet API (Anyone with link view)</p>
                 </div>
-                <button onclick="document.getElementById('demo-alert').remove()" class="text-amber-500 hover:text-amber-700">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
             </div>
+            <button onclick="fetchSheetData()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg shadow-sm transition">
+                <i class="fa-solid fa-rotate mr-1"></i> โหลดข้อมูลใหม่
+            </button>
+        </div>
 
-            <!-- PDF Target Container -->
-            <div id="report-container" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-10 pdf-container max-w-4xl mx-auto">
+        <!-- PDF Target Container -->
+        <div id="report-container" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-10 pdf-container max-w-4xl mx-auto">
                 
                 <!-- Report Header -->
                 <div class="border-b-2 border-slate-800 pb-4 mb-6">
@@ -238,26 +240,26 @@
             </div>
             
             <p class="text-xs text-slate-600 mb-4">
-                ระบบได้ฝัง Link Google Sheet หลักของคุณไว้เรียบร้อยแล้ว สามารถกดปุ่มเพื่อทดสอบหรืออัปเดตการเชื่อมต่อได้ทันที
+                คุณสามารถระบุ Google Apps Script Web App URL หรือลิงก์ CSV จาก Google Sheets เพื่อดึงข้อมูลสดได้โดยตรง
             </p>
 
             <div class="space-y-4 text-sm">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Google Sheet URL</label>
-                    <input type="text" id="sheet-id-input" value="https://docs.google.com/spreadsheets/d/1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc/edit?usp=sharing" readonly
-                           class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 text-xs focus:outline-none cursor-not-allowed">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Google Sheet ID</label>
+                    <input type="text" id="sheet-id-input" value="1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc" 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 text-xs focus:outline-none">
                 </div>
 
                 <div class="p-3 bg-slate-50 rounded-lg text-xs text-slate-600 space-y-1 border border-slate-200">
-                    <p class="font-semibold text-slate-800 mb-1"><i class="fa-solid fa-circle-info text-blue-500"></i> คำแนะนำรูปแบบการระบุเลขใน Col H:</p>
-                    <p>• ใน **Sheet 3 คอลัมน์ H** ของแต่ละส่วนงาน ให้ใส่ตัวเลขข้อเสนอแนะคั่นด้วยจุลภาค</p>
-                    <p>• ตัวอย่าง: <code class="bg-white px-1 py-0.5 border rounded text-emerald-700">1, 2, 5</code> (ระบบจะดึงข้อ 1, 2 และ 5 มาจัดเข้าหัวข้ออัตโนมัติ)</p>
+                    <p class="font-semibold text-slate-800 mb-1"><i class="fa-solid fa-circle-info text-blue-500"></i> คำแนะนำในการแชร์ไฟล์:</p>
+                    <p>1. ใน Google Sheets ไปที่ <b>ไฟล์ > แชร์ > เผยแพร่ไปยังเว็บ</b></p>
+                    <p>2. เผยแพร่ชีท <b>Sheet 3</b> และ <b>ข้อเสนอแนะ</b> ให้เป็นรูปแบบ CSV</p>
                 </div>
             </div>
 
             <div class="mt-6 flex justify-end gap-3">
                 <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">ปิดหน้าต่าง</button>
-                <button onclick="saveSheetConfig()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg">ซิงค์ข้อมูล Real-time</button>
+                <button onclick="saveSheetConfig()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg">ดึงข้อมูลจริงทันที</button>
             </div>
         </div>
     </div>
@@ -269,18 +271,134 @@
         let unitsData = [];
         let globalSuggestions = {};
         
-        // Embedded Google Sheet URL
-        const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc/edit?usp=sharing";
+        // Target Sheet ID
+        const SHEET_ID = "1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc";
 
-        // Master Suggestions Reference (ดึงมาจากชีท "ข้อเสนอแนะ")
-        const defaultMasterSuggestions = {
-            "1": "ให้ส่วนงานเร่งรัดปรับปรุงรายการครุภัณฑ์ในระบบทะเบียนสินทรัพย์ให้ถูกต้องตรงกับความเป็นจริง และรายงานความมีอยู่จริงของครุภัณฑ์ให้ครบถ้วน",
-            "2": "ให้ส่วนงานตรวจสอบรายการครุภัณฑ์ที่บันทึกซ้ำซ้อนในระบบ และดำเนินการปรับปรุงข้อมูลบัญชีให้ถูกต้อง",
-            "3": "ให้ส่วนงานสำรวจและรายงานสภาพครุภัณฑ์ที่ชำรุด หรือไม่ได้ใช้งาน เพื่อดำเนินการส่งซ่อมหรือแทงจำหน่ายตามระเบียบต่อไป",
-            "4": "ให้ส่วนงานระบุชื่อ-นามสกุล ผู้ครอบครองครุภัณฑ์ทุกรายการในระบบให้เป็นปัจจุบันและชัดเจน",
-            "5": "ให้ส่วนงานจัดทำหลักฐานการยืม-คืนครุภัณฑ์ให้ครบถ้วนสมบูรณ์ตามระเบียบ",
-            "6": "ให้ส่วนงานเร่งรัดติดตามครุภัณฑ์ที่อยู่ระหว่างการยืมคืนให้กลับมาอยู่ในสภาพสมบูรณ์และเป็นไปตามกำหนด"
-        };
+        // Fetch Live Data directly using gviz CSV Endpoint
+        async function fetchSheetData() {
+            const refreshIcon = document.getElementById('refresh-icon');
+            if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+            const statusTitle = document.getElementById('status-title');
+            const statusDesc = document.getElementById('status-desc');
+            
+            if (statusTitle) statusTitle.innerText = "กำลังดึงข้อมูลจาก Google Sheets...";
+
+            try {
+                // Fetch Master Suggestions Sheet
+                const suggUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('ข้อเสนอแนะ')}`;
+                const suggResponse = await fetch(suggUrl);
+                if (suggResponse.ok) {
+                    const suggCsv = await suggResponse.text();
+                    parseSuggestionsCSV(suggCsv);
+                }
+
+                // Fetch Sheet 3 Table Data
+                const sheet3Url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Sheet 3')}`;
+                const sheet3Response = await fetch(sheet3Url);
+                
+                if (sheet3Response.ok) {
+                    const sheet3Csv = await sheet3Response.text();
+                    parseSheet3CSV(sheet3Csv);
+                    
+                    if (statusTitle) statusTitle.innerText = "เชื่อมต่อสำเร็จ (ข้อมูลสดจาก Google Sheets)";
+                    if (statusDesc) statusDesc.innerText = `อัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`;
+                } else {
+                    throw new Error("Cannot fetch Sheet 3");
+                }
+            } catch (error) {
+                console.warn("Using fallback demo data due to CORS or offline mode:", error);
+                if (statusTitle) statusTitle.innerText = "แสดงผลด้วยข้อมูลสำรอง (Demo Mode)";
+                if (statusDesc) statusDesc.innerText = "ไม่สามารถเข้าถึง API โดยตรงได้ชั่วคราว แสดงผลข้อมูลในระบบให้ใช้งานได้ต่อเนื่อง";
+                generateDemoData();
+            } finally {
+                if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+                renderSidebarList();
+                selectUnit(currentUnitIndex);
+                document.getElementById('last-updated').innerText = new Date().toLocaleTimeString('th-TH');
+            }
+        }
+
+        // CSV Parser Helpers
+        function parseCSVLine(text) {
+            let p = '', c = '', r = [];
+            let q = false;
+            for (let i = 0; i < text.length; i++) {
+                c = text[i];
+                if (c === '"') {
+                    if (q && text[i+1] === '"') { p += '"'; i++; }
+                    else { q = !q; }
+                } else if (c === ',' && !q) {
+                    r.push(p.trim());
+                    p = '';
+                } else {
+                    p += c;
+                }
+            }
+            r.push(p.trim());
+            return r;
+        }
+
+        function parseSuggestionsCSV(csvText) {
+            const lines = csvText.split('\n');
+            globalSuggestions = {};
+            lines.forEach((line, index) => {
+                if (index === 0 || !line.trim()) return; // Skip header
+                const cols = parseCSVLine(line);
+                if (cols.length >= 2) {
+                    const key = cols[0].replace(/^"|"$/g, '').trim();
+                    const val = cols[1].replace(/^"|"$/g, '').trim();
+                    if (key) globalSuggestions[key] = val;
+                }
+            });
+        }
+
+        function parseSheet3CSV(csvText) {
+            const lines = csvText.split('\n');
+            let parsedUnits = [];
+            let currentUnit = null;
+
+            lines.forEach((line, index) => {
+                if (index < 2 || !line.trim()) return; // Skip headers
+                const cols = parseCSVLine(line).map(c => c.replace(/^"|"$/g, '').trim());
+                
+                const seq = cols[0];
+                const unitName = cols[1];
+                const subName = cols[2];
+                const existState = cols[3] || '-';
+                const conditionState = cols[4] || '-';
+                const ownerState = cols[5] || '-';
+                const borrowState = cols[6] || '-';
+                const colH = cols[7] || '';
+
+                if (unitName && unitName !== '-') {
+                    currentUnit = {
+                        id: parsedUnits.length + 1,
+                        name: unitName,
+                        colH: colH,
+                        subUnits: []
+                    };
+                    parsedUnits.push(currentUnit);
+                }
+
+                if (currentUnit && subName) {
+                    currentUnit.subUnits.push({
+                        subName: subName,
+                        existState: existState,
+                        conditionState: conditionState,
+                        ownerState: ownerState,
+                        borrowState: borrowState
+                    });
+                    if (colH && !currentUnit.colH) {
+                        currentUnit.colH = colH;
+                    }
+                }
+            });
+
+            if (parsedUnits.length > 0) {
+                unitsData = parsedUnits;
+            }
+        }
 
         // Initialize Mock Data Structure EXACTLY matching Sheet 3 Image
         function generateDemoData() {
@@ -315,58 +433,21 @@
                             borrowState: "-"
                         }
                     ]
-                },
-                {
-                    id: 2,
-                    name: "คณะวิศวกรรมศาสตร์",
-                    colH: "1, 3, 4",
-                    subUnits: [
-                        {
-                            subName: "09-วิศวฯ",
-                            existState: "ไม่รายงานความมีอยู่จริงของครุภัณฑ์ 5 รายการ",
-                            conditionState: "ไม่รายงานสภาพครุภัณฑ์ 3 รายการ",
-                            ownerState: "ไม่ระบุชื่อผู้ครอบครอง 12 รายการ",
-                            borrowState: "-"
-                        },
-                        {
-                            subName: "71-ศูนย์วิจัยพลังงานวิศวกรรม",
-                            existState: "-",
-                            conditionState: "มีครุภัณฑ์ชำรุดรอจำหน่าย 2 รายการ",
-                            ownerState: "-",
-                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 1 รายการ"
-                        }
-                    ]
-                },
-                {
-                    id: 3,
-                    name: "คณะวิทยาศาสตร์",
-                    colH: "2, 5, 6",
-                    subUnits: [
-                        {
-                            subName: "07-วิทยฯ",
-                            existState: "จำหน่ายแล้วแต่ยังไม่ได้ปรับปรุงทะเบียน 2 รายการ",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 15 รายการ"
-                        }
-                    ]
                 }
             ];
 
-            // Generate remaining units up to 32
             const remainingNames = [
-                "คณะแพทยศาสตร์", "คณะเภสัชศาสตร์", "คณะพยาบาลศาสตร์", "คณะทันตแพทยศาสตร์", 
-                "คณะเทคโนโลยีสารสนเทศ", "คณะบริหารธุรกิจ", "คณะมนุษยศาสตร์", "คณะศึกษาศาสตร์",
-                "คณะวิจิตรศิลป์", "คณะสังคมศาสตร์", "คณะนิติศาสตร์", "คณะสื่อสารมวลชน",
-                "คณะรัฐศาสตร์", "คณะเศรษฐศาสตร์", "คณะสถาปัตยกรรมศาสตร์", "คณะอุตสาหกรรมเกษตร",
-                "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", "สำนักงานมหาวิทยาลัย", "สำนักหอสมุด", "สำนักบริการเทคโนโลยีสารสนเทศ",
-                "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", "สถาบันวิจัยสังคม", "ศูนย์บริหารกายภาพและสิ่งแวดล้อม",
-                "ศูนย์ส่งเสริมศิลปวัฒนธรรม", "สำนักประกันคุณภาพการศึกษา", "หน่วยตรวจสอบภายใน", 
-                "ศูนย์ส่งเสริมการวิจัย", "สถาบันภาษา", "สำนักบริการวิชาการ"
+                "คณะวิศวกรรมศาสตร์", "คณะวิทยาศาสตร์", "คณะแพทยศาสตร์", "คณะเภสัชศาสตร์", "คณะพยาบาลศาสตร์", 
+                "คณะทันตแพทยศาสตร์", "คณะเทคโนโลยีสารสนเทศ", "คณะบริหารธุรกิจ", "คณะมนุษยศาสตร์", "คณะศึกษาศาสตร์",
+                "คณะวิจิตรศิลป์", "คณะสังคมศาสตร์", "คณะนิติศาสตร์", "คณะสื่อสารมวลชน", "คณะรัฐศาสตร์", 
+                "คณะเศรษฐศาสตร์", "คณะสถาปัตยกรรมศาสตร์", "คณะอุตสาหกรรมเกษตร", "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", 
+                "สำนักงานมหาวิทยาลัย", "สำนักหอสมุด", "สำนักบริการเทคโนโลยีสารสนเทศ", "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", 
+                "สถาบันวิจัยสังคม", "ศูนย์บริหารกายภาพและสิ่งแวดล้อม", "ศูนย์ส่งเสริมศิลปวัฒนธรรม", "สำนักประกันคุณภาพการศึกษา", 
+                "หน่วยตรวจสอบภายใน", "ศูนย์ส่งเสริมการวิจัย", "สถาบันภาษา", "สำนักบริการวิชาการ"
             ];
 
             remainingNames.forEach((uName, index) => {
-                const id = index + 4;
+                const id = index + 2;
                 unitsData.push({
                     id: id,
                     name: uName,
@@ -405,7 +486,7 @@
                 btn.innerHTML = `
                     <div class="truncate pr-2">
                         <span class="block ${isSelected ? 'text-white' : 'text-slate-900'}">${unit.id}. ${unit.name}</span>
-                        <span class="text-[10px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}">ข้อเสนอแนะ Col H: [ ${unit.colH} ]</span>
+                        <span class="text-[10px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}">ข้อเสนอแนะ Col H: [ ${unit.colH || 'ไม่มี'} ]</span>
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] ${isSelected ? 'text-white' : 'text-slate-300'}"></i>
                 `;
@@ -422,6 +503,7 @@
 
         // Select Unit & Display Report
         function selectUnit(index) {
+            if (!unitsData[index]) return;
             currentUnitIndex = index;
             renderSidebarList(document.getElementById('search-unit').value);
             
@@ -450,7 +532,7 @@
 
             // Parse Column H numbers (e.g. "1, 2, 5" => [1, 2, 5])
             const selectedNumbers = unit.colH
-                ? unit.colH.split(',').map(n => n.trim()).filter(n => n !== '')
+                ? String(unit.colH).split(',').map(n => n.trim()).filter(n => n !== '')
                 : [];
 
             // Categorize Suggestions based on rules
@@ -476,7 +558,6 @@
             const container = document.getElementById(elementId);
             container.innerHTML = '';
 
-            // Hide section completely if there are no suggestions for this topic
             if (numsList.length === 0) {
                 card.classList.add('hidden');
                 return;
@@ -500,7 +581,7 @@
         // Export Single Unit Page to PDF
         function exportToPDF() {
             const element = document.getElementById('report-container');
-            const unitName = unitsData[currentUnitIndex].name;
+            const unitName = unitsData[currentUnitIndex] ? unitsData[currentUnitIndex].name : 'รายงานครุภัณฑ์';
             
             const opt = {
                 margin:       [10, 10, 10, 10],
@@ -512,19 +593,6 @@
             };
 
             html2pdf().set(opt).from(element).save();
-        }
-
-        // Fetch Live Sheet Data Simulation
-        function fetchSheetData() {
-            const refreshIcon = document.getElementById('refresh-icon');
-            refreshIcon.classList.add('fa-spin');
-            
-            setTimeout(() => {
-                refreshIcon.classList.remove('fa-spin');
-                const now = new Date();
-                document.getElementById('last-updated').innerText = now.toLocaleTimeString('th-TH');
-                selectUnit(currentUnitIndex);
-            }, 600);
         }
 
         // Modal Handlers
@@ -543,12 +611,7 @@
 
         // App Initializer
         window.onload = function() {
-            generateDemoData();
-            renderSidebarList();
-            selectUnit(0);
-            
-            const today = new Date();
-            document.getElementById('last-updated').innerText = today.toLocaleTimeString('th-TH');
+            fetchSheetData();
         };
     </script>
 </body>
