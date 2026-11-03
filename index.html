@@ -183,6 +183,11 @@
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
+            /* เพิ่มระยะห่างส่วนข้อเสนอแนะเมื่อขึ้นหน้าใหม่เพื่อไม่ให้ชิดขอบบนเกินไป */
+            #main-suggestions-wrapper {
+                padding-top: 1rem !important;
+                margin-top: 1.5rem !important;
+            }
             table.report-table tr {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -268,7 +273,7 @@
                 <div class="doc-header-tag">เอกสารประกอบที่ 3</div>
                 
                 <div class="border-b-2 border-slate-900 pb-1 mb-3 pt-2">
-                    <h2 class="title-unit-header" id="report-unit-name">คณะเกษตรศาสตร์</h2>
+                    <h2 class="title-unit-header" id="report-unit-name">ประเด็นข้อตรวจพบ : คณะเกษตรศาสตร์</h2>
                 </div>
 
                 <!-- Section 1: Table Data (Sheet 3) -->
@@ -607,7 +612,7 @@
             renderSidebarList();
 
             const unit = unitsData[index];
-            document.getElementById('report-unit-name').innerText = unit.name;
+            document.getElementById('report-unit-name').innerText = `ประเด็นข้อตรวจพบ : ${unit.name}`;
 
             // Render Table Rows
             const tbody = document.getElementById('table-items-body');
