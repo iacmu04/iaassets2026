@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแสดงรายงานสรุปครุภัณฑ์และข้อเสนอแนะ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf.js for clean PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Google Fonts Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Sarabun', 'Prompt', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Prompt', 'Sarabun', sans-serif;
+        }
+
+        /* Print & PDF Specific Styling */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white;
+                padding: 0;
+            }
+            .pdf-container {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+        }
+
+        /* Prevent breaking text awkwardly when generating PDF */
+        .pdf-page-break-avoid {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        
+        .pdf-table-row {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* PDF Render Optimization for Thai Fonts & Line Height */
+        #report-container table {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #report-container th, 
+        #report-container td {
+            line-height: 1.6 !important;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header (No Print) -->
+    <header class="bg-slate-900 text-white shadow-md no-print sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-file-invoice text-emerald-400 text-2xl"></i>
+                <div>
+                    <h1 class="text-lg font-bold leading-tight">ระบบรายงานครุภัณฑ์และข้อเสนอแนะ</h1>
+                    <p class="text-xs text-slate-400">ดึงข้อมูล Real-time จาก Google Sheets (32 ส่วนงาน)</p>
+                </div>
+            </div>
+
+            <!-- Header Controls -->
+            <div class="flex items-center gap-3">
+                <button id="btn-refresh" onclick="fetchSheetData()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 rounded-lg flex items-center gap-2 border border-slate-700 transition">
+                    <i class="fa-solid fa-rotate" id="refresh-icon"></i>
+                    <span>รีเฟรชข้อมูล</span>
+                </button>
+                <button onclick="openConfigModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 rounded-lg flex items-center gap-2 border border-slate-700 transition">
+                    <i class="fa-solid fa-link text-amber-400"></i>
+                    <span>ตั้งค่า Link Sheet</span>
+                </button>
+                <button onclick="exportToPDF()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow flex items-center gap-2 transition">
+                    <i class="fa-solid fa-file-pdf text-sm"></i>
+                    <span>Export PDF</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col md:flex-row gap-6">
+
+        <!-- Sidebar: Unit Selector (No Print) -->
+        <aside class="w-full md:w-80 bg-white rounded-xl shadow-sm border border-slate-200 p-4 shrink-0 no-print flex flex-col h-[calc(100vh-6rem)] sticky top-20">
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">ค้นหา / เลือกส่วนงาน (1-32)</label>
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="search-unit" placeholder="ค้นหาชื่อส่วนงาน..." oninput="filterUnits()" 
+                           class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
+                </div>
+            </div>
+
+            <!-- List of 32 Units -->
+            <div id="unit-list" class="flex-grow overflow-y-auto pr-1 space-y-1">
+                <!-- Unit items will be populated by JS -->
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400 text-center">
+                อัปเดตข้อมูลล่าสุด: <span id="last-updated">กำลังโหลด...</span>
+            </div>
+        </aside>
+
+        <!-- Main Display Card (This part gets exported to PDF) -->
+        <section class="flex-grow">
+            <!-- Alert Banner for Sheet Link Setup (If using demo data) -->
+            <div id="demo-alert" class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800 text-sm no-print">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 text-lg mt-0.5"></i>
+                <div class="flex-grow">
+                    <p class="font-semibold">กำลังแสดงผลข้อมูลตัวอย่าง (Demo Data)</p>
+                    <p class="text-xs text-amber-700 mt-0.5">คุณสามารถกดปุ่ม <b>"ตั้งค่า Link Sheet"</b> ด้านบนเพื่อระบุ Google Sheet ID หรือเลือกเชื่อมต่อ API เพื่ออ่านข้อมูลจริงแบบ Real-time</p>
+                </div>
+                <button onclick="document.getElementById('demo-alert').remove()" class="text-amber-500 hover:text-amber-700">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- PDF Target Container -->
+            <div id="report-container" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-10 pdf-container max-w-4xl mx-auto">
+                
+                <!-- Report Header -->
+                <div class="border-b-2 border-slate-800 pb-4 mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900" id="report-unit-name">ส่วนงาน: คณะเกษตรศาสตร์</h2>
+                </div>
+
+                <!-- Section 1: Table Data (From Sheet 3) -->
+                <div class="mb-8">
+                    <div class="overflow-x-auto rounded-lg border border-slate-300 shadow-sm">
+                        <table class="w-full text-xs text-left text-slate-800 border-collapse">
+                            <thead class="text-xs text-slate-900 uppercase bg-slate-100 border-b-2 border-slate-300">
+                                <tr class="divide-x divide-slate-200 text-center font-bold">
+                                    <th scope="col" class="px-3 py-3 w-[25%] text-left">บัญชี/หน่วยงาน</th>
+                                    <th scope="col" class="px-3 py-3 w-[22%]">ความมีอยู่ของครุภัณฑ์</th>
+                                    <th scope="col" class="px-3 py-3 w-[17%]">การรายงานสภาพครุภัณฑ์</th>
+                                    <th scope="col" class="px-3 py-3 w-[16%]">การระบุผู้ครอบครอง</th>
+                                    <th scope="col" class="px-3 py-3 w-[20%]">การยืม-คืนครุภัณฑ์</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-items-body" class="divide-y divide-slate-200 bg-white">
+                                <!-- Table rows generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 2: Automated Suggestions (From "ข้อเสนอแนะ" Sheet based on Col H) -->
+                <div class="pdf-page-break-avoid">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
+                        <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-comment-dots text-emerald-600"></i>
+                            <span>ข้อเสนอแนะ</span>
+                        </h3>
+                    </div>
+
+                    <!-- Suggestions Categorized into Topics -->
+                    <div class="space-y-4" id="suggestions-container">
+                        
+                        <!-- Topic 1 -->
+                        <div id="topic-1-card" class="bg-slate-50 p-4 rounded-lg border border-slate-200/80 pdf-page-break-avoid">
+                            <h4 class="font-bold text-base text-slate-900 mb-2 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                                <span>ความมีอยู่ของครุภัณฑ์และความถูกต้องตรงกัน</span>
+                            </h4>
+                            <div id="topic-1-content" class="text-base text-slate-700 pl-4 leading-relaxed">
+                                <!-- Content dynamically generated -->
+                            </div>
+                        </div>
+
+                        <!-- Topic 2 -->
+                        <div id="topic-2-card" class="bg-slate-50 p-4 rounded-lg border border-slate-200/80 pdf-page-break-avoid">
+                            <h4 class="font-bold text-base text-slate-900 mb-2 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                <span>สภาพครุภัณฑ์</span>
+                            </h4>
+                            <div id="topic-2-content" class="text-base text-slate-700 pl-4 leading-relaxed">
+                                <!-- Content dynamically generated -->
+                            </div>
+                        </div>
+
+                        <!-- Topic 3 -->
+                        <div id="topic-3-card" class="bg-slate-50 p-4 rounded-lg border border-slate-200/80 pdf-page-break-avoid">
+                            <h4 class="font-bold text-base text-slate-900 mb-2 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                <span>ผู้ครอบครอง</span>
+                            </h4>
+                            <div id="topic-3-content" class="text-base text-slate-700 pl-4 leading-relaxed">
+                                <!-- Content dynamically generated -->
+                            </div>
+                        </div>
+
+                        <!-- Topic 4 -->
+                        <div id="topic-4-card" class="bg-slate-50 p-4 rounded-lg border border-slate-200/80 pdf-page-break-avoid">
+                            <h4 class="font-bold text-base text-slate-900 mb-2 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <span>การยืม-คืนครุภัณฑ์</span>
+                            </h4>
+                            <div id="topic-4-content" class="text-base text-slate-700 pl-4 leading-relaxed">
+                                <!-- Content dynamically generated -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Sheet Configuration Modal -->
+    <div id="config-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-900">การเชื่อมต่อ Google Sheets</h3>
+                <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-600 mb-4">
+                ระบบได้ฝัง Link Google Sheet หลักของคุณไว้เรียบร้อยแล้ว สามารถกดปุ่มเพื่อทดสอบหรืออัปเดตการเชื่อมต่อได้ทันที
+            </p>
+
+            <div class="space-y-4 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Google Sheet URL</label>
+                    <input type="text" id="sheet-id-input" value="https://docs.google.com/spreadsheets/d/1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc/edit?usp=sharing" readonly
+                           class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 text-xs focus:outline-none cursor-not-allowed">
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-lg text-xs text-slate-600 space-y-1 border border-slate-200">
+                    <p class="font-semibold text-slate-800 mb-1"><i class="fa-solid fa-circle-info text-blue-500"></i> คำแนะนำรูปแบบการระบุเลขใน Col H:</p>
+                    <p>• ใน **Sheet 3 คอลัมน์ H** ของแต่ละส่วนงาน ให้ใส่ตัวเลขข้อเสนอแนะคั่นด้วยจุลภาค</p>
+                    <p>• ตัวอย่าง: <code class="bg-white px-1 py-0.5 border rounded text-emerald-700">1, 2, 5</code> (ระบบจะดึงข้อ 1, 2 และ 5 มาจัดเข้าหัวข้ออัตโนมัติ)</p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">ปิดหน้าต่าง</button>
+                <button onclick="saveSheetConfig()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg">ซิงค์ข้อมูล Real-time</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Master Data Storage
+        let currentUnitIndex = 0;
+        let unitsData = [];
+        let globalSuggestions = {};
+        
+        // Embedded Google Sheet URL
+        const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc/edit?usp=sharing";
+
+        // Master Suggestions Reference (ดึงมาจากชีท "ข้อเสนอแนะ")
+        const defaultMasterSuggestions = {
+            "1": "ให้ส่วนงานเร่งรัดปรับปรุงรายการครุภัณฑ์ในระบบทะเบียนสินทรัพย์ให้ถูกต้องตรงกับความเป็นจริง และรายงานความมีอยู่จริงของครุภัณฑ์ให้ครบถ้วน",
+            "2": "ให้ส่วนงานตรวจสอบรายการครุภัณฑ์ที่บันทึกซ้ำซ้อนในระบบ และดำเนินการปรับปรุงข้อมูลบัญชีให้ถูกต้อง",
+            "3": "ให้ส่วนงานสำรวจและรายงานสภาพครุภัณฑ์ที่ชำรุด หรือไม่ได้ใช้งาน เพื่อดำเนินการส่งซ่อมหรือแทงจำหน่ายตามระเบียบต่อไป",
+            "4": "ให้ส่วนงานระบุชื่อ-นามสกุล ผู้ครอบครองครุภัณฑ์ทุกรายการในระบบให้เป็นปัจจุบันและชัดเจน",
+            "5": "ให้ส่วนงานจัดทำหลักฐานการยืม-คืนครุภัณฑ์ให้ครบถ้วนสมบูรณ์ตามระเบียบ",
+            "6": "ให้ส่วนงานเร่งรัดติดตามครุภัณฑ์ที่อยู่ระหว่างการยืมคืนให้กลับมาอยู่ในสภาพสมบูรณ์และเป็นไปตามกำหนด"
+        };
+
+        // Initialize Mock Data Structure EXACTLY matching Sheet 3 Image
+        function generateDemoData() {
+            globalSuggestions = { ...defaultMasterSuggestions };
+            
+            // 32 Units matching the exact layout of Sheet 3
+            unitsData = [
+                {
+                    id: 1,
+                    name: "คณะเกษตรศาสตร์",
+                    colH: "1, 2, 3, 5",
+                    subUnits: [
+                        {
+                            subName: "08-เกษตรฯ",
+                            existState: "จำหน่ายแล้ว 9 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ",
+                            conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ",
+                            ownerState: "-",
+                            borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 88 รายการ"
+                        },
+                        {
+                            subName: "63-ATSC ศูนย์บริการวิชาการและถ่ายทอดเทคโนโลยีการเกษตร",
+                            existState: "-",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 4 รายการ"
+                        },
+                        {
+                            subName: "44-ศูนย์วิจัยเทคโนโลยีหลังการเก็บเกี่ยว",
+                            existState: "บันทึกรายการซ้ำ 3 รายการ เนื่องจากโอนครุภัณฑ์ไปยังบัญชีคณะฯ แล้ว แต่ยังไม่ได้ปรับปรุงรายการในบัญชีศูนย์ฯ ทำให้รายการครุภัณฑ์ยังค้างอยู่ในระบบ ซึ่งซ้ำซ้อนกับรายการในบัญชีคณะฯ",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "-"
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: "คณะวิศวกรรมศาสตร์",
+                    colH: "1, 3, 4",
+                    subUnits: [
+                        {
+                            subName: "09-วิศวฯ",
+                            existState: "ไม่รายงานความมีอยู่จริงของครุภัณฑ์ 5 รายการ",
+                            conditionState: "ไม่รายงานสภาพครุภัณฑ์ 3 รายการ",
+                            ownerState: "ไม่ระบุชื่อผู้ครอบครอง 12 รายการ",
+                            borrowState: "-"
+                        },
+                        {
+                            subName: "71-ศูนย์วิจัยพลังงานวิศวกรรม",
+                            existState: "-",
+                            conditionState: "มีครุภัณฑ์ชำรุดรอจำหน่าย 2 รายการ",
+                            ownerState: "-",
+                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 1 รายการ"
+                        }
+                    ]
+                },
+                {
+                    id: 3,
+                    name: "คณะวิทยาศาสตร์",
+                    colH: "2, 5, 6",
+                    subUnits: [
+                        {
+                            subName: "07-วิทยฯ",
+                            existState: "จำหน่ายแล้วแต่ยังไม่ได้ปรับปรุงทะเบียน 2 รายการ",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 15 รายการ"
+                        }
+                    ]
+                }
+            ];
+
+            // Generate remaining units up to 32
+            const remainingNames = [
+                "คณะแพทยศาสตร์", "คณะเภสัชศาสตร์", "คณะพยาบาลศาสตร์", "คณะทันตแพทยศาสตร์", 
+                "คณะเทคโนโลยีสารสนเทศ", "คณะบริหารธุรกิจ", "คณะมนุษยศาสตร์", "คณะศึกษาศาสตร์",
+                "คณะวิจิตรศิลป์", "คณะสังคมศาสตร์", "คณะนิติศาสตร์", "คณะสื่อสารมวลชน",
+                "คณะรัฐศาสตร์", "คณะเศรษฐศาสตร์", "คณะสถาปัตยกรรมศาสตร์", "คณะอุตสาหกรรมเกษตร",
+                "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", "สำนักงานมหาวิทยาลัย", "สำนักหอสมุด", "สำนักบริการเทคโนโลยีสารสนเทศ",
+                "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", "สถาบันวิจัยสังคม", "ศูนย์บริหารกายภาพและสิ่งแวดล้อม",
+                "ศูนย์ส่งเสริมศิลปวัฒนธรรม", "สำนักประกันคุณภาพการศึกษา", "หน่วยตรวจสอบภายใน", 
+                "ศูนย์ส่งเสริมการวิจัย", "สถาบันภาษา", "สำนักบริการวิชาการ"
+            ];
+
+            remainingNames.forEach((uName, index) => {
+                const id = index + 4;
+                unitsData.push({
+                    id: id,
+                    name: uName,
+                    colH: `${(id % 5) + 1}, ${(id % 3) + 1}`,
+                    subUnits: [
+                        {
+                            subName: `สำนักงานส่วนงาน (${uName})`,
+                            existState: id % 2 === 0 ? "ตรวจนับถูกต้องครบถ้วน" : "ไม่รายงานความมีอยู่จริง 1 รายการ",
+                            conditionState: id % 3 === 0 ? "ไม่รายงานสภาพครุภัณฑ์ 2 รายการ" : "-",
+                            ownerState: id % 4 === 0 ? "ไม่ระบุชื่อผู้ครอบครอง 4 รายการ" : "-",
+                            borrowState: id % 2 !== 0 ? "หลักฐานการยืม-คืนครบถ้วน" : "แนบหลักฐานไม่ครบถ้วน 2 รายการ"
+                        }
+                    ]
+                });
+            });
+        }
+
+        // Render Sidebar Unit Selection
+        function renderSidebarList(filterText = '') {
+            const listEl = document.getElementById('unit-list');
+            listEl.innerHTML = '';
+
+            unitsData.forEach((unit, idx) => {
+                if (filterText && !unit.name.toLowerCase().includes(filterText.toLowerCase())) return;
+
+                const btn = document.createElement('button');
+                btn.onclick = () => selectUnit(idx);
+                
+                const isSelected = idx === currentUnitIndex;
+                btn.className = `w-full text-left p-3 rounded-lg text-xs font-medium transition flex items-center justify-between ${
+                    isSelected 
+                        ? 'bg-slate-900 text-white font-semibold shadow-sm' 
+                        : 'text-slate-700 hover:bg-slate-100 bg-white border border-slate-100'
+                }`;
+
+                btn.innerHTML = `
+                    <div class="truncate pr-2">
+                        <span class="block ${isSelected ? 'text-white' : 'text-slate-900'}">${unit.id}. ${unit.name}</span>
+                        <span class="text-[10px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}">ข้อเสนอแนะ Col H: [ ${unit.colH} ]</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-[10px] ${isSelected ? 'text-white' : 'text-slate-300'}"></i>
+                `;
+
+                listEl.appendChild(btn);
+            });
+        }
+
+        // Filter Sidebar Units
+        function filterUnits() {
+            const query = document.getElementById('search-unit').value;
+            renderSidebarList(query);
+        }
+
+        // Select Unit & Display Report
+        function selectUnit(index) {
+            currentUnitIndex = index;
+            renderSidebarList(document.getElementById('search-unit').value);
+            
+            const unit = unitsData[index];
+            
+            // Populate Main Report Headers
+            document.getElementById('report-unit-name').innerText = `ส่วนงาน: ${unit.name}`;
+
+            // Populate Table Items (4/5 Main Columns)
+            const tableBody = document.getElementById('table-items-body');
+            tableBody.innerHTML = '';
+
+            unit.subUnits.forEach((sub) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 pdf-table-row divide-x divide-slate-200 text-xs";
+                
+                tr.innerHTML = `
+                    <td class="px-3 py-3 text-slate-800 font-medium align-top bg-white">${sub.subName}</td>
+                    <td class="px-3 py-3 text-slate-700 align-top leading-relaxed">${sub.existState}</td>
+                    <td class="px-3 py-3 text-slate-700 align-top leading-relaxed text-center">${sub.conditionState}</td>
+                    <td class="px-3 py-3 text-slate-700 align-top leading-relaxed text-center">${sub.ownerState}</td>
+                    <td class="px-3 py-3 text-slate-700 align-top leading-relaxed">${sub.borrowState}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            // Parse Column H numbers (e.g. "1, 2, 5" => [1, 2, 5])
+            const selectedNumbers = unit.colH
+                ? unit.colH.split(',').map(n => n.trim()).filter(n => n !== '')
+                : [];
+
+            // Categorize Suggestions based on rules
+            renderCategorizedSuggestions(selectedNumbers);
+        }
+
+        // Categorize & Render Suggestions into Specified Topics
+        function renderCategorizedSuggestions(numbers) {
+            const t1Nums = numbers.filter(n => n === '1' || n === '2');
+            const t2Nums = numbers.filter(n => n === '3');
+            const t3Nums = numbers.filter(n => n === '4');
+            const t4Nums = numbers.filter(n => n === '5' || n === '6');
+
+            renderTopicContent('topic-1-card', 'topic-1-content', t1Nums);
+            renderTopicContent('topic-2-card', 'topic-2-content', t2Nums);
+            renderTopicContent('topic-3-card', 'topic-3-content', t3Nums);
+            renderTopicContent('topic-4-card', 'topic-4-content', t4Nums);
+        }
+
+        // Helper to Render Each Topic Box & Hide if Empty
+        function renderTopicContent(cardId, elementId, numsList) {
+            const card = document.getElementById(cardId);
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+
+            // Hide section completely if there are no suggestions for this topic
+            if (numsList.length === 0) {
+                card.classList.add('hidden');
+                return;
+            }
+
+            card.classList.remove('hidden');
+
+            if (numsList.length === 1) {
+                const num = numsList[0];
+                const text = globalSuggestions[num] || `ข้อเสนอแนะข้อที่ ${num}`;
+                container.innerHTML = `<p class="text-slate-800 leading-relaxed text-base">${text}</p>`;
+            } else {
+                const listHtml = numsList.map((num, i) => {
+                    const text = globalSuggestions[num] || `ข้อเสนอแนะข้อที่ ${num}`;
+                    return `<li class="leading-relaxed mb-1.5 text-base"><span class="font-bold text-slate-900 mr-1.5">${i + 1}.</span> ${text}</li>`;
+                }).join('');
+                container.innerHTML = `<ol class="list-none space-y-1">${listHtml}</ol>`;
+            }
+        }
+
+        // Export Single Unit Page to PDF
+        function exportToPDF() {
+            const element = document.getElementById('report-container');
+            const unitName = unitsData[currentUnitIndex].name;
+            
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     `รายงานสรุปครุภัณฑ์_${unitName}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // Fetch Live Sheet Data Simulation
+        function fetchSheetData() {
+            const refreshIcon = document.getElementById('refresh-icon');
+            refreshIcon.classList.add('fa-spin');
+            
+            setTimeout(() => {
+                refreshIcon.classList.remove('fa-spin');
+                const now = new Date();
+                document.getElementById('last-updated').innerText = now.toLocaleTimeString('th-TH');
+                selectUnit(currentUnitIndex);
+            }, 600);
+        }
+
+        // Modal Handlers
+        function openConfigModal() {
+            document.getElementById('config-modal').classList.remove('hidden');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('config-modal').classList.add('hidden');
+        }
+
+        function saveSheetConfig() {
+            closeConfigModal();
+            fetchSheetData();
+        }
+
+        // App Initializer
+        window.onload = function() {
+            generateDemoData();
+            renderSidebarList();
+            selectUnit(0);
+            
+            const today = new Date();
+            document.getElementById('last-updated').innerText = today.toLocaleTimeString('th-TH');
+        };
+    </script>
+</body>
+</html>
