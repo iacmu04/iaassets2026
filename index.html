@@ -74,7 +74,7 @@
             font-size: 10pt !important;
             line-height: 1.5 !important;
             color: #1e293b;
-            padding-left: 1.5em; /* ย่อหน้าสำหรับรายการข้อเสนอแนะแบบรันเลข */
+            padding-left: 1.5em;
         }
 
         /* Clean Table Layout & Alignment */
@@ -151,7 +151,7 @@
                 break-inside: avoid !important;
             }
             table.report-table th {
-                background-color: #e0f2fe !important; /* บังคับให้หัวตารางเป็นสีฟ้าอ่อนใน PDF */
+                background-color: #e0f2fe !important;
                 color: #0369a1 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -239,7 +239,6 @@
                     <table class="report-table">
                         <thead>
                             <tr>
-                                <!-- Header "บัญชี/หน่วยงาน" centered -->
                                 <th style="width: 25%; text-align: center;">บัญชี/หน่วยงาน</th>
                                 <th style="width: 21%;">ความมีอยู่ของครุภัณฑ์</th>
                                 <th style="width: 17%;">การรายงานสภาพครุภัณฑ์</th>
@@ -317,7 +316,6 @@
         let currentUnitIndex = 0;
         let unitsData = [];
         let globalSuggestions = {};
-        let suggestionList = [];
         
         // Target Sheet ID Embedded directly
         const SHEET_ID = "1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc";
@@ -333,7 +331,7 @@
             if (statusTitle) statusTitle.innerText = "กำลังดึงข้อมูลสดจาก Google Sheets...";
 
             try {
-                // Fetch Master Suggestions Sheet ("ข้อเสนอแนะ")
+                // 1. Fetch Master Suggestions Sheet ("ข้อเสนอแนะ")
                 const suggUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('ข้อเสนอแนะ')}`;
                 const suggResponse = await fetch(suggUrl);
                 if (suggResponse.ok) {
@@ -341,7 +339,7 @@
                     parseSuggestionsCSV(suggCsv);
                 }
 
-                // Fetch Sheet3 Table Data
+                // 2. Fetch Sheet3 Table Data
                 let sheet3Csv = '';
                 const sheet3Url1 = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Sheet3')}`;
                 let sheet3Response = await fetch(sheet3Url1);
@@ -367,7 +365,7 @@
             } catch (error) {
                 console.warn("Using fallback demo data due to CORS or offline mode:", error);
                 if (statusTitle) statusTitle.innerText = "แสดงผลด้วยข้อมูลสำรองในระบบ";
-                if (statusDesc) statusDesc.innerText = "ไม่สามารถยิง API ตรงได้เนื่องจาก CORS/Offline แสดงโครงสร้างข้อมูลย้อนหลังให้ทำงานต่อได้";
+                if (statusDesc) statusDesc.innerText = "แสดงข้อมูลจำลองโครงสร้าง ย้อนหลังให้ใช้งานได้";
                 generateDemoData();
             } finally {
                 if (refreshIcon) refreshIcon.classList.remove('fa-spin');
@@ -419,19 +417,19 @@
             return result;
         }
 
+        // Read Sheet "ข้อเสนอแนะ" (Col A = Key 1..6, Col B = Suggestion Content)
         function parseSuggestionsCSV(csvText) {
             const rows = parseCSV(csvText);
             globalSuggestions = {};
-            suggestionList = [];
             
             rows.forEach((r) => {
                 if (!r || r.length === 0) return;
                 
-                // Read Column A as Recommendation Key (1, 2, 3, etc.)
+                // Read Column A (Key: 1, 2, 3, etc.)
                 const rawKey = r[0] !== undefined ? r[0] : '';
                 const key = rawKey.toString().replace(/[^0-9]/g, '').trim();
                 
-                // Read Column B as Recommendation Content Text
+                // Read Column B (Text Content)
                 let val = '';
                 if (r.length > 1 && r[1] !== undefined) {
                     val = r[1].toString().trim();
@@ -508,26 +506,202 @@
                 unitsData = parsedUnits;
             }
         }
-                    }
-                    
-                    // Fallback to Col A text if no other col has text
-                    if (!val && r[0]) {
-                        val = r[0].replace(/^"|"$/g, '').trim();
-                    }
 
-                    if (val) {
-                        const sugIndex = (suggestionList.length + 1).toString();
-                        if (key) {
-                            globalSuggestions[key] = val;
-                        }
-                        // Also store by index fallback
-                        globalSuggestions[sugIndex] = globalSuggestions[sugIndex] || val;
-                        suggestionList.push(val);
-                    }
-                }
+        // Render Sidebar List (32 Units)
+        function renderSidebarList(filtered = null) {
+            const listContainer = document.getElementById('unit-list');
+            listContainer.innerHTML = '';
+
+            const itemsToRender = filtered || unitsData;
+
+            if (itemsToRender.length === 0) {
+                listContainer.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">ไม่พบข้อมูลส่วนงาน</div>`;
+                return;
+            }
+
+            itemsToRender.forEach((unit) => {
+                const isSelected = (unitsData.indexOf(unit) === currentUnitIndex);
+                const btn = document.createElement('button');
+                btn.onclick = () => selectUnit(unitsData.indexOf(unit));
+                
+                btn.className = `w-full text-left p-2.5 rounded-lg text-xs transition flex items-center justify-between border ${
+                    isSelected 
+                    ? 'bg-slate-900 text-white border-slate-900 font-medium shadow-sm' 
+                    : 'bg-white text-slate-700 border-slate-100 hover:bg-slate-50 hover:border-slate-200'
+                }`;
+
+                const badgeText = unit.colH ? `[ ข้อ ${unit.colH} ]` : '[ ไม่มี ]';
+                const badgeColor = isSelected 
+                    ? 'text-slate-300' 
+                    : (unit.colH ? 'text-amber-600' : 'text-slate-400');
+
+                btn.innerHTML = `
+                    <div class="truncate pr-2">
+                        <span class="font-semibold mr-1">${unit.seq || unit.id}.</span>
+                        <span>${unit.name}</span>
+                        <div class="text-[10px] ${badgeColor} font-mono mt-0.5">ข้อเสนอแนะ: ${badgeText}</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-[10px] ${isSelected ? 'text-white' : 'text-slate-300'}"></i>
+                `;
+                listContainer.appendChild(btn);
             });
+
+            document.getElementById('unit-count-badge').innerText = `${unitsData.length} ส่วนงาน`;
         }
 
-        // Parse Sheet 3 CSV Data
-        function parseSheet3CSV(csvText) {
-<!-- ... existing code -->
+        // Search & Filter Units
+        function filterUnits() {
+            const keyword = document.getElementById('search-unit').value.toLowerCase().trim();
+            if (!keyword) {
+                renderSidebarList();
+                return;
+            }
+            const filtered = unitsData.filter(u => 
+                u.name.toLowerCase().includes(keyword) || 
+                (u.seq && u.seq.toString().includes(keyword))
+            );
+            renderSidebarList(filtered);
+        }
+
+        // Select & Display Unit Detail
+        function selectUnit(index) {
+            if (index < 0 || index >= unitsData.length) return;
+            currentUnitIndex = index;
+            renderSidebarList();
+
+            const unit = unitsData[index];
+            document.getElementById('report-unit-name').innerText = unit.name;
+
+            // Render Table Rows
+            const tbody = document.getElementById('table-items-body');
+            tbody.innerHTML = '';
+
+            if (!unit.subUnits || unit.subUnits.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td class="col-dept-cell">-</td>
+                        <td class="col-content-cell">-</td>
+                        <td class="col-content-cell">-</td>
+                        <td class="col-content-cell">-</td>
+                        <td class="col-content-cell">-</td>
+                    </tr>
+                `;
+            } else {
+                unit.subUnits.forEach((sub) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="col-dept-cell font-medium text-slate-800">${sub.subName || '-'}</td>
+                        <td class="col-content-cell">${sub.existState}</td>
+                        <td class="col-content-cell">${sub.conditionState}</td>
+                        <td class="col-content-cell">${sub.ownerState}</td>
+                        <td class="col-content-cell">${sub.borrowState}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Render Automated Categorized Suggestions
+            renderSuggestions(unit.colHList || []);
+        }
+
+        // Render Suggestions & Auto-Categorize into Topics
+        function renderSuggestions(selectedCodes) {
+            // Topic mappings
+            const topicConfigs = [
+                { id: 'topic-1', codes: ['1', '2'] },
+                { id: 'topic-2', codes: ['3'] },
+                { id: 'topic-3', codes: ['4'] },
+                { id: 'topic-4', codes: ['5', '6'] }
+            ];
+
+            let totalVisibleTopics = 0;
+
+            topicConfigs.forEach(config => {
+                const cardEl = document.getElementById(`${config.id}-card`);
+                const contentEl = document.getElementById(`${config.id}-content`);
+                
+                // Match requested codes in this category
+                const matchedCodes = selectedCodes.filter(c => config.codes.includes(c) && globalSuggestions[c]);
+
+                if (matchedCodes.length > 0) {
+                    totalVisibleTopics++;
+                    cardEl.classList.remove('hidden');
+
+                    if (matchedCodes.length === 1) {
+                        // Single item -> Text with first-line indent
+                        const code = matchedCodes[0];
+                        contentEl.className = "text-content-body";
+                        contentEl.innerText = globalSuggestions[code];
+                    } else {
+                        // Multiple items -> Numbered list with indentation
+                        contentEl.className = "text-content-body-list";
+                        let listHtml = '<ol class="list-decimal space-y-1 ml-4">';
+                        matchedCodes.forEach(code => {
+                            listHtml += `<li>${globalSuggestions[code]}</li>`;
+                        });
+                        listHtml += '</ol>';
+                        contentEl.innerHTML = listHtml;
+                    }
+                } else {
+                    cardEl.classList.add('hidden');
+                }
+            });
+
+            // Hide main suggestions block if no topics are active
+            const mainWrapper = document.getElementById('main-suggestions-wrapper');
+            if (totalVisibleTopics === 0) {
+                mainWrapper.classList.add('hidden');
+            } else {
+                mainWrapper.classList.remove('hidden');
+            }
+        }
+
+        // Export Native Crisp PDF via Print Window
+        function exportToPDF() {
+            window.print();
+        }
+
+        // Demo Data Generator Fallback
+        function generateDemoData() {
+            globalSuggestions = {
+                "1": "เห็นควรให้ส่วนงานสอบทานข้อมูลและเอกสารหลักฐานที่เกี่ยวข้องกับรายการครุภัณฑ์ทั้งหมดที่มีสถานะหรือรายละเอียดไม่ตรงกับรายการในระบบทะเบียนสินทรัพย์ของมหาวิทยาลัย ได้แก่ ครุภัณฑ์ที่จำหน่ายหรือโอนแล้ว ครุภัณฑ์ที่ไม่พบ และครุภัณฑ์ที่บันทึกรายการซ้ำซ้อน",
+                "2": "กรณีรายงานผลการสอบทานความมีอยู่ของครุภัณฑ์ไม่ครบถ้วน ให้ส่วนงานเร่งดำเนินการสอบทานและส่งรายงานยืนยันสถานะความมีอยู่ของครุภัณฑ์ที่ค้างอยู่ให้มหาวิทยาลัยรับทราบโดยเร็ว",
+                "3": "เห็นควรให้ส่วนงานที่สำรวจและยืนยันข้อมูลสภาพครุภัณฑ์ไม่ครบถ้วน เร่งดำเนินการสำรวจและยืนยันข้อมูลสภาพครุภัณฑ์ที่ยังไม่ได้ดำเนินการ และปรับปรุงข้อมูลสภาพครุภัณฑ์ในระบบทะเบียนสินทรัพย์ของมหาวิทยาลัยให้ถูกต้องและเป็นปัจจุบัน",
+                "4": "เห็นควรให้ส่วนงานเพิ่มการควบคุมภายในด้านการบริหารจัดการสินทรัพย์ของมหาวิทยาลัย โดยสอบทานผู้ครอบครองรายการครุภัณฑ์ทั้งหมดของส่วนงาน และกำหนดหรือปรับปรุงข้อมูลผู้ครอบครองหรือผู้รับผิดชอบของครุภัณฑ์ทุกรายการให้ครบถ้วนชัดเจนและเป็นปัจจุบัน",
+                "5": "เห็นควรให้ส่วนงาน ทบทวนและปรับปรุงกระบวนการควบคุมภายในด้านการยืม-คืนครุภัณฑ์ ให้เป็นไปตามประกาศมหาวิทยาลัยเชียงใหม่ เรื่อง แนวทางการใช้ทรัพย์สินของมหาวิทยาลัยเชียงใหม่ พ.ศ. 2566",
+                "6": "กรณีไม่มีการยืม-คืนรายการครุภัณฑ์ที่สุ่มตรวจสอบ โดยไม่ระบุเหตุผล หรือมีการยืม-คืน แต่แนบหลักฐานการยืม-คืนไม่ครบถ้วน ให้ส่วนงานเร่งดำเนินการตรวจสอบให้ครบถ้วน"
+            };
+
+            unitsData = [
+                {
+                    id: 1, seq: 1, name: "คณะเกษตรศาสตร์", colH: "1, 2, 3, 6", colHList: ["1", "2", "3", "6"],
+                    subUnits: [
+                        { subName: "08-เกษตรฯ", existState: "จำหน่ายแล้ว 9 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 88 รายการ" },
+                        { subName: "63-ATSC ศูนย์บริการวิชาการและถ่ายทอดเทคโนโลยีการเกษตร", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 4 รายการ" },
+                        { subName: "44-ศูนย์วิจัยเทคโนโลยีหลังการเก็บเกี่ยว", existState: "บันทึกรายการซ้ำ 3 รายการ เนื่องจากโอนครุภัณฑ์ไปยังบัญชีคณะฯ แล้ว แต่ยังไม่ได้ปรับปรุงรายการในบัญชีศูนย์ฯ ทำให้รายการครุภัณฑ์ยังค้างอยู่ในระบบ ซึ่งซ้ำซ้อนกับรายการในบัญชีคณะฯ", conditionState: "-", ownerState: "-", borrowState: "-" }
+                    ]
+                },
+                {
+                    id: 2, seq: 2, name: "คณะเทคนิคการแพทย์", colH: "5", colHList: ["5"],
+                    subUnits: [
+                        { subName: "11-เทคนิคฯ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 105 รายการ" },
+                        { subName: "25-AMS.CSC.ศูนย์บริการเทคนิคการแพทย์คลินิก", existState: "-", conditionState: "-", ownerState: "-", borrowState: "หลักฐานการยืม-คืน ไม่ระบุระยะเวลายืม-คืน" }
+                    ]
+                },
+                {
+                    id: 3, seq: 3, name: "คณะเภสัชศาสตร์", colH: "1, 3", colHList: ["1", "3"],
+                    subUnits: [
+                        { subName: "10-เภสัชฯ", existState: "จำหน่ายแล้ว 13 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
+                        { subName: "28-เภสัชชุมชน", existState: "-", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 2 รายการ", ownerState: "-", borrowState: "-" }
+                    ]
+                }
+            ];
+        }
+
+        // Initialize App on Page Load
+        window.onload = function() {
+            fetchSheetData();
+        };
+    </script>
+</body>
+</html>
