@@ -20,8 +20,8 @@
         body {
             background-color: #f8fafc;
             color: #0f172a;
-            font-size: 16pt;
-            line-height: 1.5;
+            font-size: 10pt;
+            line-height: 1.4;
         }
 
         /* Responsive Printable Page Dimensions - A4 Landscape */
@@ -29,39 +29,43 @@
             width: 100%;
             background: white;
             font-family: 'Sarabun', sans-serif;
+            position: relative;
         }
 
-        /* Typography Specs */
+        /* Typography Specs strictly matching user criteria */
         .doc-header-tag {
-            font-size: 14pt !important;
+            font-size: 10pt !important;
             font-weight: 500 !important;
-            color: #334155;
+            color: #475569;
             text-align: right !important;
+            position: absolute;
+            top: 0;
+            right: 0;
         }
 
         .title-unit-header {
-            font-size: 20pt !important;
+            font-size: 16pt !important;
             font-weight: bold !important;
             line-height: 1.3 !important;
             color: #0f172a;
         }
 
         .section-suggestion-title {
-            font-size: 16pt !important;
+            font-size: 12pt !important;
             font-weight: bold !important;
             line-height: 1.4 !important;
             color: #0f172a;
         }
 
         .topic-subtitle {
-            font-size: 14pt !important;
+            font-size: 11pt !important;
             font-weight: bold !important;
             color: #0f172a;
         }
 
         .text-content-body {
-            font-size: 12pt !important;
-            line-height: 1.5 !important;
+            font-size: 10pt !important;
+            line-height: 1.4 !important;
             color: #1e293b;
         }
 
@@ -73,12 +77,12 @@
         }
 
         table.report-table th {
-            font-size: 12pt !important;
+            font-size: 10pt !important;
             font-weight: bold !important;
             background-color: #f8fafc !important;
             color: #0f172a !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 6px 8px !important;
+            padding: 5px 6px !important;
             text-align: center !important; /* Header centered */
             vertical-align: middle !important;
             word-wrap: break-word !important;
@@ -86,11 +90,11 @@
         }
 
         table.report-table td {
-            font-size: 12pt !important;
+            font-size: 10pt !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 6px 8px !important;
+            padding: 5px 6px !important;
             vertical-align: top !important;
-            line-height: 1.5 !important;
+            line-height: 1.4 !important;
             word-wrap: break-word !important;
             overflow-wrap: break-word !important;
             white-space: normal !important;
@@ -108,13 +112,13 @@
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 10mm 15mm 10mm 15mm;
+                margin: 0; /* Remove Browser Headers & Footers completely */
             }
             html, body {
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
-                font-size: 12pt !important;
+                font-size: 10pt !important;
             }
             .no-print {
                 display: none !important;
@@ -122,7 +126,7 @@
             .printable-area {
                 width: 100% !important;
                 margin: 0 !important;
-                padding: 0 !important;
+                padding: 12mm 15mm !important; /* Internal page margin */
                 box-shadow: none !important;
                 border: none !important;
             }
@@ -205,14 +209,15 @@
             <!-- PDF Target Container (Printable Clean Layout - No Outer Border) -->
             <div id="report-container" class="printable-area bg-white p-2 sm:p-4">
                 
-                <!-- Document Top Bar: Tag at Top Right (14pt) -->
-                <div class="flex justify-between items-end border-b-2 border-slate-900 pb-2 mb-4">
+                <!-- Document Top Header Bar: "เอกสารประกอบที่ 3" placed at Top Right -->
+                <div class="doc-header-tag">เอกสารประกอบที่ 3</div>
+                
+                <div class="border-b-2 border-slate-900 pb-1 mb-3 pt-2">
                     <h2 class="title-unit-header" id="report-unit-name">คณะเกษตรศาสตร์</h2>
-                    <div class="doc-header-tag">เอกสารประกอบที่ 3</div>
                 </div>
 
                 <!-- Section 1: Table Data (Sheet 3) -->
-                <div class="mb-6">
+                <div class="mb-4">
                     <table class="report-table">
                         <thead>
                             <tr>
@@ -231,52 +236,52 @@
                 </div>
 
                 <!-- Section 2: Automated Suggestions -->
-                <div id="main-suggestions-wrapper" class="pdf-page-break-avoid mt-6">
-                    <div class="mb-3 border-b border-slate-300 pb-1">
+                <div id="main-suggestions-wrapper" class="pdf-page-break-avoid mt-4">
+                    <div class="mb-2 border-b border-slate-300 pb-0.5">
                         <h3 class="section-suggestion-title">
                             ข้อเสนอแนะ
                         </h3>
                     </div>
 
                     <!-- Suggestions Categorized into Topics -->
-                    <div class="space-y-4" id="suggestions-container">
+                    <div class="space-y-3" id="suggestions-container">
                         
                         <!-- Topic 1 -->
                         <div id="topic-1-card" class="pdf-page-break-avoid hidden">
-                            <h4 class="topic-subtitle mb-1">
+                            <h4 class="topic-subtitle mb-0.5">
                                 ความมีอยู่ของครุภัณฑ์และความถูกต้องตรงกัน
                             </h4>
-                            <div id="topic-1-content" class="text-content-body pl-3">
+                            <div id="topic-1-content" class="text-content-body pl-2">
                                 <!-- Content dynamically generated -->
                             </div>
                         </div>
 
                         <!-- Topic 2 -->
                         <div id="topic-2-card" class="pdf-page-break-avoid hidden">
-                            <h4 class="topic-subtitle mb-1">
+                            <h4 class="topic-subtitle mb-0.5">
                                 สภาพครุภัณฑ์
                             </h4>
-                            <div id="topic-2-content" class="text-content-body pl-3">
+                            <div id="topic-2-content" class="text-content-body pl-2">
                                 <!-- Content dynamically generated -->
                             </div>
                         </div>
 
                         <!-- Topic 3 -->
                         <div id="topic-3-card" class="pdf-page-break-avoid hidden">
-                            <h4 class="topic-subtitle mb-1">
+                            <h4 class="topic-subtitle mb-0.5">
                                 ผู้ครอบครอง
                             </h4>
-                            <div id="topic-3-content" class="text-content-body pl-3">
+                            <div id="topic-3-content" class="text-content-body pl-2">
                                 <!-- Content dynamically generated -->
                             </div>
                         </div>
 
                         <!-- Topic 4 -->
                         <div id="topic-4-card" class="pdf-page-break-avoid hidden">
-                            <h4 class="topic-subtitle mb-1">
+                            <h4 class="topic-subtitle mb-0.5">
                                 การยืม-คืนครุภัณฑ์
                             </h4>
-                            <div id="topic-4-content" class="text-content-body pl-3">
+                            <div id="topic-4-content" class="text-content-body pl-2">
                                 <!-- Content dynamically generated -->
                             </div>
                         </div>
@@ -401,6 +406,7 @@
             rows.forEach((r, index) => {
                 if (index === 0) return; // Skip Header
                 if (r.length >= 2) {
+                    // Extract code digits reliably
                     const key = r[0].replace(/[^0-9]/g, '').trim();
                     const val = r[1].replace(/^"|"$/g, '').trim();
                     if (key && val) {
@@ -410,7 +416,7 @@
             });
         }
 
-        // Parse Sheet 3 CSV Data (Reads Col H on main unit row where Col B is populated)
+        // Parse Sheet 3 CSV Data
         function parseSheet3CSV(csvText) {
             const rows = parseCSV(csvText);
             let parsedUnits = [];
@@ -434,10 +440,15 @@
                         id: parsedUnits.length + 1,
                         seq: seq || (parsedUnits.length + 1),
                         name: unitName,
-                        colH: colH || '', // Read Col H strictly from this row!
+                        colH: colH || '', 
                         subUnits: []
                     };
                     parsedUnits.push(currentUnit);
+                }
+
+                // If colH exists on sub-rows, append it to currentUnit's colH
+                if (currentUnit && colH && !currentUnit.colH) {
+                    currentUnit.colH = colH;
                 }
 
                 // Append Sub-unit item row
@@ -565,10 +576,10 @@
             
             const unit = unitsData[index];
             
-            // Display Only Unit Name in Title (20pt)
+            // Display Unit Name (16pt)
             document.getElementById('report-unit-name').innerText = unit.name;
 
-            // Populate Table Rows (12pt body)
+            // Populate Table Rows (10pt body)
             const tableBody = document.getElementById('table-items-body');
             tableBody.innerHTML = '';
 
@@ -585,10 +596,15 @@
                 tableBody.appendChild(tr);
             });
 
-            // Parse Column H numbers
-            const selectedNumbers = unit.colH
-                ? String(unit.colH).split(/[\s,]+/).map(n => n.replace(/[^0-9]/g, '').trim()).filter(n => n !== '')
-                : [];
+            // Advanced Parsing for Column H Numbers (e.g. "1, 2, 4, 6" or "1,2")
+            let selectedNumbers = [];
+            if (unit.colH) {
+                // Split by commas or whitespace, extract clean digits
+                const rawParts = String(unit.colH).split(/[,,\s\n\r]+/);
+                selectedNumbers = rawParts
+                    .map(p => p.replace(/[^0-9]/g, '').trim())
+                    .filter(p => p !== '');
+            }
 
             // Categorize Suggestions based on rules
             renderCategorizedSuggestions(selectedNumbers);
@@ -621,7 +637,7 @@
             container.innerHTML = '';
 
             // Filter codes that actually exist in globalSuggestions
-            const validCodes = numsList.filter(n => globalSuggestions[n]);
+            const validCodes = numsList.filter(n => globalSuggestions[n] !== undefined && globalSuggestions[n] !== '');
 
             // Hide section completely if there are no valid suggestions for this topic
             if (validCodes.length === 0) {
@@ -638,7 +654,7 @@
             } else {
                 const listHtml = validCodes.map((num, i) => {
                     const text = globalSuggestions[num];
-                    return `<div class="text-content-body mb-1"><span class="font-bold mr-1.5">${i + 1}.</span>${text}</div>`;
+                    return `<div class="text-content-body mb-0.5"><span class="font-bold mr-1">${i + 1}.</span>${text}</div>`;
                 }).join('');
                 container.innerHTML = listHtml;
             }
@@ -646,7 +662,7 @@
             return true;
         }
 
-        // Export Single Unit Page using Browser Native Print API for 100% crisp Thai Font
+        // Export Single Unit Page using Browser Native Print API
         function exportToPDF() {
             window.print();
         }
