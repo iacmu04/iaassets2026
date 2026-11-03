@@ -65,24 +65,53 @@
 
         .text-content-body {
             font-size: 10pt !important;
-            line-height: 1.5 !important;
+            line-height: 1.6 !important;
             color: #1e293b;
-            white-space: pre-line; /* รองรับการขึ้นบรรทัดใหม่จากการ Alt+Enter ใน Google Sheet */
-            text-indent: 1.5em; /* ย่อหน้าบรรทัดแรกเล็กน้อย */
+            white-space: pre-line;
+            text-align: left !important; /* ยกเลิกการชิดขอบขวาเพื่อแก้ปัญหาช่องไฟห่างเกินไป */
+            word-break: break-word !important;
         }
 
         .text-content-body-list {
             font-size: 10pt !important;
-            line-height: 1.5 !important;
+            line-height: 1.6 !important;
             color: #1e293b;
-            padding-left: 1.5em;
-            white-space: pre-line; /* รองรับการขึ้นบรรทัดใหม่จากการ Alt+Enter ใน Google Sheet */
+            text-align: left !important;
+            word-break: break-word !important;
+            padding-left: 0 !important;
         }
 
         /* Formatting helper for line break preservation inside list items */
         .suggestion-item-text {
             white-space: pre-line;
+            display: inline;
+            text-align: left !important;
+            word-break: break-word !important;
+        }
+
+        /* First line indent for list items with numbers */
+        .suggestion-item-wrapper {
+            text-indent: 2.5em; /* บรรทัดแรกย่อหน้าเข้าไปทางขวาเท่ากัน */
+            text-align: left !important;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Custom Indentation Helper for Sub-items starting with "-" */
+        .sub-bullet-indent {
             display: block;
+            padding-left: 4em; /* ย่อหน้าขีดย่อย (-) ให้ลึกเข้าไปด้านใน */
+            text-indent: 0;
+            white-space: pre-line;
+            text-align: left !important;
+        }
+
+        /* Standard paragraph block indent for plain text paragraphs (e.g. ทั้งนี้..., นอกจากนี้...) */
+        .suggestion-paragraph-block {
+            text-indent: 2.5em; /* ให้บรรทัดแรกเยื้องขวาเท่ากัน 2.5em ทุกย่อหน้า */
+            text-align: left !important;
+            white-space: pre-line;
+            word-break: break-word !important;
+            margin-bottom: 0.5rem;
         }
 
         /* Clean Table Layout & Alignment */
@@ -639,30 +668,59 @@
                         // Single item -> Text with preserved line breaks
                         const code = matchedCodes[0];
                         contentEl.className = "text-content-body";
-                        contentEl.innerText = globalSuggestions[code];
+                        contentEl.innerHTML = formatSuggestionText(globalSuggestions[code], false);
                     } else {
-                        // Multiple items -> Numbered list with preserved line breaks
+                        // Multiple items -> Numbered list with preserved line breaks & Thai Distributed Layout
                         contentEl.className = "text-content-body-list";
-                        let listHtml = '<ol class="list-decimal space-y-2 ml-4">';
-                        matchedCodes.forEach(code => {
-                            const formattedText = globalSuggestions[code];
-                            listHtml += `<li><span class="suggestion-item-text">${formattedText}</span></li>`;
+                        let listHtml = '<ol class="list-none space-y-2">';
+                        matchedCodes.forEach((code, idx) => {
+                            const formattedText = formatSuggestionText(globalSuggestions[code], true, idx + 1);
+                            listHtml += `<li>${formattedText}</li>`;
                         });
                         listHtml += '</ol>';
                         contentEl.innerHTML = listHtml;
                     }
                 } else {
                     cardEl.classList.add('hidden');
+                    contentEl.innerHTML = '';
                 }
             });
 
-            // Hide main suggestions block if no topics are active
-            const mainWrapper = document.getElementById('main-suggestions-wrapper');
-            if (totalVisibleTopics === 0) {
-                mainWrapper.classList.add('hidden');
+            // Show or hide main suggestions block
+            const wrapper = document.getElementById('main-suggestions-wrapper');
+            if (totalVisibleTopics > 0) {
+                wrapper.classList.remove('hidden');
             } else {
-                mainWrapper.classList.remove('hidden');
+                wrapper.classList.add('hidden');
             }
+        }
+
+        // Format Suggestion Text to handle paragraph indents and sub-bullet items correctly
+        function formatSuggestionText(rawText, isList = false, itemNum = 1) {
+            if (!rawText) return '';
+
+            const lines = rawText.split('\n');
+            let formattedLines = [];
+
+            lines.forEach((line, index) => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+
+                if (trimmed.startsWith('-')) {
+                    // Line starting with "-" -> Apply deeper sub-bullet indentation
+                    formattedLines.push(`<span class="sub-bullet-indent">${trimmed}</span>`);
+                } else {
+                    if (index === 0 && isList) {
+                        // First line of a numbered list item (1. 2. 3.) -> First line indent 2.5em
+                        formattedLines.push(`<div class="suggestion-item-wrapper"><span class="font-bold text-slate-900">${itemNum}. </span><span class="suggestion-item-text">${trimmed}</span></div>`);
+                    } else {
+                        // All other normal paragraph blocks (including single items or subsequent paragraphs like "ทั้งนี้...", "นอกจากนี้...") -> First line indent 2.5em
+                        formattedLines.push(`<div class="suggestion-paragraph-block"><span class="suggestion-item-text">${trimmed}</span></div>`);
+                    }
+                }
+            });
+
+            return formattedLines.join('');
         }
 
         // Export Native Crisp PDF via Print Window
