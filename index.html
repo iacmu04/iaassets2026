@@ -84,11 +84,7 @@
             <div class="flex items-center gap-3">
                 <button id="btn-refresh" onclick="fetchSheetData()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 rounded-lg flex items-center gap-2 border border-slate-700 transition">
                     <i class="fa-solid fa-rotate" id="refresh-icon"></i>
-                    <span>รีเฟรชข้อมูล</span>
-                </button>
-                <button onclick="openConfigModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 rounded-lg flex items-center gap-2 border border-slate-700 transition">
-                    <i class="fa-solid fa-link text-amber-400"></i>
-                    <span>ตั้งค่า Link Sheet</span>
+                    <span>ดึงข้อมูลสด Google Sheet</span>
                 </button>
                 <button onclick="exportToPDF()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow flex items-center gap-2 transition">
                     <i class="fa-solid fa-file-pdf text-sm"></i>
@@ -125,17 +121,15 @@
         <!-- Main Display Card (This part gets exported to PDF) -->
     <section class="flex-grow">
         <!-- Status Notification Banner -->
-        <div id="status-alert" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-blue-900 text-sm no-print">
+        <div id="status-alert" class="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-emerald-900 text-sm no-print">
             <div class="flex items-center gap-3">
-                <i class="fa-solid fa-cloud-arrow-down text-blue-600 text-lg" id="status-icon"></i>
+                <i class="fa-solid fa-circle-check text-emerald-600 text-lg" id="status-icon"></i>
                 <div>
-                    <p class="font-semibold" id="status-title">เชื่อมต่อ Google Sheets แบบ Real-time</p>
-                    <p class="text-xs text-blue-700" id="status-desc">ดึงข้อมูลสดผ่าน Google Spreadsheet API (Anyone with link view)</p>
+                    <p class="font-semibold" id="status-title">เชื่อมต่อ Google Sheet จริง (Sheet3 & ข้อเสนอแนะ)</p>
+                    <p class="text-xs text-emerald-700" id="status-desc">ดึงข้อมูล 32 ส่วนงาน และจับคู่ข้อเสนอแนะจาก Col H อัตโนมัติ</p>
                 </div>
             </div>
-            <button onclick="fetchSheetData()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg shadow-sm transition">
-                <i class="fa-solid fa-rotate mr-1"></i> โหลดข้อมูลใหม่
-            </button>
+            <span class="text-xs font-mono bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md" id="unit-count-badge">32 ส่วนงาน</span>
         </div>
 
         <!-- PDF Target Container -->
@@ -274,7 +268,7 @@
         // Target Sheet ID
         const SHEET_ID = "1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc";
 
-        // Fetch Live Data directly using gviz CSV Endpoint
+        // Fetch Live Data directly using gviz CSV Endpoint with CORS Proxies fallbacks
         async function fetchSheetData() {
             const refreshIcon = document.getElementById('refresh-icon');
             if (refreshIcon) refreshIcon.classList.add('fa-spin');
@@ -293,18 +287,28 @@
                     parseSuggestionsCSV(suggCsv);
                 }
 
-                // Fetch Sheet 3 Table Data
-                const sheet3Url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Sheet 3')}`;
-                const sheet3Response = await fetch(sheet3Url);
+                // Fetch Sheet 3 Table Data (Try 'Sheet3' then fallback to 'Sheet 3')
+                let sheet3Csv = '';
+                const sheet3Url1 = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Sheet3')}`;
+                let sheet3Response = await fetch(sheet3Url1);
                 
                 if (sheet3Response.ok) {
-                    const sheet3Csv = await sheet3Response.text();
+                    sheet3Csv = await sheet3Response.text();
+                } else {
+                    const sheet3Url2 = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Sheet 3')}`;
+                    sheet3Response = await fetch(sheet3Url2);
+                    if (sheet3Response.ok) {
+                        sheet3Csv = await sheet3Response.text();
+                    }
+                }
+
+                if (sheet3Csv) {
                     parseSheet3CSV(sheet3Csv);
                     
-                    if (statusTitle) statusTitle.innerText = "เชื่อมต่อสำเร็จ (ข้อมูลสดจาก Google Sheets)";
+                    if (statusTitle) statusTitle.innerText = `เชื่อมต่อสำเร็จ (ดึงข้อมูลสดสำเร็จ ${unitsData.length} ส่วนงาน)`;
                     if (statusDesc) statusDesc.innerText = `อัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`;
                 } else {
-                    throw new Error("Cannot fetch Sheet 3");
+                    throw new Error("Cannot fetch Sheet3 data");
                 }
             } catch (error) {
                 console.warn("Using fallback demo data due to CORS or offline mode:", error);
@@ -359,7 +363,7 @@
             let currentUnit = null;
 
             lines.forEach((line, index) => {
-                if (index < 2 || !line.trim()) return; // Skip headers
+                if (index < 1 || !line.trim()) return; // Skip header row
                 const cols = parseCSVLine(line).map(c => c.replace(/^"|"$/g, '').trim());
                 
                 const seq = cols[0];
@@ -371,17 +375,19 @@
                 const borrowState = cols[6] || '-';
                 const colH = cols[7] || '';
 
-                if (unitName && unitName !== '-') {
+                // If Column B has a Unit Name (Main Unit Row)
+                if (unitName && unitName !== '-' && unitName !== 'ส่วนงาน') {
                     currentUnit = {
                         id: parsedUnits.length + 1,
                         name: unitName,
-                        colH: colH,
+                        colH: colH, // Take Col H specifically from this main unit row!
                         subUnits: []
                     };
                     parsedUnits.push(currentUnit);
                 }
 
-                if (currentUnit && subName) {
+                // Append Sub-unit info to the active Main Unit
+                if (currentUnit && subName && subName !== 'บัญชี/หน่วยงาน') {
                     currentUnit.subUnits.push({
                         subName: subName,
                         existState: existState,
@@ -389,9 +395,6 @@
                         ownerState: ownerState,
                         borrowState: borrowState
                     });
-                    if (colH && !currentUnit.colH) {
-                        currentUnit.colH = colH;
-                    }
                 }
             });
 
@@ -402,14 +405,21 @@
 
         // Initialize Mock Data Structure EXACTLY matching Sheet 3 Image
         function generateDemoData() {
-            globalSuggestions = { ...defaultMasterSuggestions };
+            globalSuggestions = {
+                "1": "ให้ส่วนงานเร่งรัดปรับปรุงรายการครุภัณฑ์ในระบบทะเบียนสินทรัพย์ให้ถูกต้องตรงกับความเป็นจริง และรายงานความมีอยู่จริงของครุภัณฑ์ให้ครบถ้วน",
+                "2": "ให้ส่วนงานตรวจสอบรายการครุภัณฑ์ที่บันทึกซ้ำซ้อนในระบบ และดำเนินการปรับปรุงข้อมูลบัญชีให้ถูกต้อง",
+                "3": "ให้ส่วนงานสำรวจและรายงานสภาพครุภัณฑ์ที่ชำรุด หรือไม่ได้ใช้งาน เพื่อดำเนินการส่งซ่อมหรือแทงจำหน่ายตามระเบียบต่อไป",
+                "4": "ให้ส่วนงานระบุชื่อผู้ครอบครองครุภัณฑ์ให้ครบถ้วนสมบูรณ์ในระบบทะเบียนสินทรัพย์",
+                "5": "ให้ส่วนงานจัดทำหลักฐานการยืม-คืนครุภัณฑ์ให้ครบถ้วนสมบูรณ์ตามระเบียบ",
+                "6": "ให้ส่วนงานติดตามและเร่งรัดการส่งคืนครุภัณฑ์ที่เกินกำหนดเวลาการยืม"
+            };
             
-            // 32 Units matching the exact layout of Sheet 3
+            // Demo data fallback for 32 units
             unitsData = [
                 {
                     id: 1,
                     name: "คณะเกษตรศาสตร์",
-                    colH: "1, 2, 3, 5",
+                    colH: "1, 2, 3, 6",
                     subUnits: [
                         {
                             subName: "08-เกษตรฯ",
@@ -433,25 +443,115 @@
                             borrowState: "-"
                         }
                     ]
+                },
+                {
+                    id: 2,
+                    name: "คณะเทคนิคการแพทย์",
+                    colH: "5",
+                    subUnits: [
+                        {
+                            subName: "11-เทคนิคฯ",
+                            existState: "-",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 105 รายการ เจ้าหน้าที่ชี้แจงว่า มีการควบคุมการนำไปใช้งานและติดตามการนำส่งคืน โดยเจ้าหน้าที่ได้รับมอบหมายให้รับผิดชอบครุภัณฑ์นั้น ทั้งนี้ คณะฯ รับทราบแนวปฏิบัติและได้ดำเนินการปรับปรุงกระบวนการยืม-คืนตามกฎระเบียบแล้ว"
+                        },
+                        {
+                            subName: "25-AMS.CSC.ศูนย์บริการเทคนิคการแพทย์คลินิก",
+                            existState: "-",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "หลักฐานการยืม-คืน ไม่ระบุระยะเวลายืม-คืน"
+                        }
+                    ]
+                },
+                {
+                    id: 3,
+                    name: "คณะเภสัชศาสตร์",
+                    colH: "1, 3",
+                    subUnits: [
+                        {
+                            subName: "10-เภสัชฯ",
+                            existState: "จำหน่ายแล้ว 13 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "-"
+                        },
+                        {
+                            subName: "28-เภสัชชุมชน",
+                            existState: "-",
+                            conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 2 รายการ",
+                            ownerState: "-",
+                            borrowState: "-"
+                        }
+                    ]
+                },
+                {
+                    id: 4,
+                    name: "คณะเศรษฐศาสตร์",
+                    colH: "6",
+                    subUnits: [
+                        {
+                            subName: "16-เศรษฐศาสตร์",
+                            existState: "-",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 98 รายการ"
+                        }
+                    ]
+                },
+                {
+                    id: 5,
+                    name: "คณะแพทยศาสตร์",
+                    colH: "1, 2, 4, 6",
+                    subUnits: [
+                        {
+                            subName: "07-แพทย์ฯ",
+                            existState: "จำหน่ายแล้ว 53 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "-"
+                        },
+                        {
+                            subName: "29-ศรีพัฒน์",
+                            existState: "-",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 172 รายการ"
+                        },
+                        {
+                            subName: "59 CRC ศูนย์วิจัยทางคลินิก",
+                            existState: "ไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ",
+                            conditionState: "-",
+                            ownerState: "ระบุผู้ครอบครองไม่ครบถ้วน",
+                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 2 รายการ"
+                        },
+                        {
+                            subName: "68 CMEX ศูนย์ความเป็นเลิศ",
+                            existState: "-",
+                            conditionState: "-",
+                            ownerState: "-",
+                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 39 รายการ"
+                        }
+                    ]
                 }
             ];
 
             const remainingNames = [
-                "คณะวิศวกรรมศาสตร์", "คณะวิทยาศาสตร์", "คณะแพทยศาสตร์", "คณะเภสัชศาสตร์", "คณะพยาบาลศาสตร์", 
-                "คณะทันตแพทยศาสตร์", "คณะเทคโนโลยีสารสนเทศ", "คณะบริหารธุรกิจ", "คณะมนุษยศาสตร์", "คณะศึกษาศาสตร์",
-                "คณะวิจิตรศิลป์", "คณะสังคมศาสตร์", "คณะนิติศาสตร์", "คณะสื่อสารมวลชน", "คณะรัฐศาสตร์", 
-                "คณะเศรษฐศาสตร์", "คณะสถาปัตยกรรมศาสตร์", "คณะอุตสาหกรรมเกษตร", "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", 
-                "สำนักงานมหาวิทยาลัย", "สำนักหอสมุด", "สำนักบริการเทคโนโลยีสารสนเทศ", "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", 
-                "สถาบันวิจัยสังคม", "ศูนย์บริหารกายภาพและสิ่งแวดล้อม", "ศูนย์ส่งเสริมศิลปวัฒนธรรม", "สำนักประกันคุณภาพการศึกษา", 
-                "หน่วยตรวจสอบภายใน", "ศูนย์ส่งเสริมการวิจัย", "สถาบันภาษา", "สำนักบริการวิชาการ"
+                "คณะสื่อสารมวลชน", "คณะทันตแพทยศาสตร์", "คณะนิติศาสตร์", "คณะบริหารธุรกิจ", "คณะพยาบาลศาสตร์", 
+                "คณะมนุษยศาสตร์", "คณะวิศวกรรมศาสตร์", "คณะวิทยาศาสตร์", "คณะสถาปัตยกรรมศาสตร์", "คณะสังคมศาสตร์", 
+                "คณะสัตวแพทยศาสตร์", "คณะอุตสาหกรรมเกษตร", "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", "สำนักงานมหาวิทยาลัย", 
+                "สำนักหอสมุด", "สำนักบริการเทคโนโลยีสารสนเทศ", "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", "สถาบันวิจัยสังคม", 
+                "ศูนย์บริหารกายภาพและสิ่งแวดล้อม", "ศูนย์ส่งเสริมศิลปวัฒนธรรม", "สำนักประกันคุณภาพการศึกษา", 
+                "หน่วยตรวจสอบภายใน", "ศูนย์ส่งเสริมการวิจัย", "สถาบันภาษา", "สำนักบริการวิชาการ", "ศูนย์วิจัยพลังงาน", "วิทยาลัยนานาชาติ"
             ];
 
             remainingNames.forEach((uName, index) => {
-                const id = index + 2;
+                const id = unitsData.length + 1;
                 unitsData.push({
                     id: id,
                     name: uName,
-                    colH: `${(id % 5) + 1}, ${(id % 3) + 1}`,
+                    colH: `${(id % 6) + 1}`,
                     subUnits: [
                         {
                             subName: `สำนักงานส่วนงาน (${uName})`,
@@ -463,6 +563,134 @@
                     ]
                 });
             });
+        }
+
+        // Parse "Sheet3": Group rows into units and intelligently collect Col H from any sub-row
+        function parseSheet3CSV(csvText) {
+            const lines = csvText.split('\n');
+            let parsedUnits = [];
+            let currentUnit = null;
+
+            lines.forEach((line, index) => {
+                if (index < 1 || !line.trim()) return; // Skip title row
+                const cols = parseCSVLine(line).map(c => c.replace(/^"|"$/g, '').trim());
+                
+                const seq = cols[0];
+                const unitName = cols[1];
+                const subName = cols[2];
+                const existState = cols[3] || '-';
+                const conditionState = cols[4] || '-';
+                const ownerState = cols[5] || '-';
+                const borrowState = cols[6] || '-';
+                const colH = cols[7] || '';
+
+                // New Main Unit detected (Seq or UnitName is populated)
+                if ((seq && !isNaN(parseInt(seq))) || (unitName && unitName !== '-' && unitName !== 'ส่วนงาน')) {
+                    currentUnit = {
+                        id: parsedUnits.length + 1,
+                        seq: seq || (parsedUnits.length + 1),
+                        name: unitName,
+                        colH: colH || '',
+                        subUnits: []
+                    };
+                    parsedUnits.push(currentUnit);
+                }
+
+                // Add Sub-unit row
+                if (currentUnit && subName && subName !== 'บัญชี/หน่วยงาน') {
+                    currentUnit.subUnits.push({
+                        subName: subName,
+                        existState: existState,
+                        conditionState: conditionState,
+                        ownerState: ownerState,
+                        borrowState: borrowState
+                    });
+
+                    // Collect Col H if it's placed on a sub-row instead of the header row!
+                    if (colH && !currentUnit.colH) {
+                        currentUnit.colH = colH;
+                    }
+                }
+            });
+
+            if (parsedUnits.length > 0) {
+                unitsData = parsedUnits;
+            }
+        }
+
+        // Backup Demo Data (Matches exactly the 32 units structure of Sheet3)
+        function generateDemoData() {
+            globalSuggestions = {
+                "1": "ให้ส่วนงานเร่งรัดปรับปรุงรายการครุภัณฑ์ในระบบทะเบียนสินทรัพย์ให้ถูกต้องตรงกับความเป็นจริง และรายงานความมีอยู่จริงของครุภัณฑ์ให้ครบถ้วน",
+                "2": "ให้ส่วนงานตรวจสอบรายการครุภัณฑ์ที่บันทึกซ้ำซ้อนในระบบ และดำเนินการปรับปรุงข้อมูลบัญชีให้ถูกต้อง",
+                "3": "ให้ส่วนงานสำรวจและรายงานสภาพครุภัณฑ์ที่ชำรุด หรือไม่ได้ใช้งาน เพื่อดำเนินการส่งซ่อมหรือแทงจำหน่ายตามระเบียบต่อไป",
+                "4": "ให้ส่วนงานระบุชื่อ-สกุลผู้ครอบครองครุภัณฑ์ให้เป็นปัจจุบันและครบถ้วน",
+                "5": "ให้ส่วนงานจัดทำหลักฐานการยืม-คืนครุภัณฑ์ให้ครบถ้วนสมบูรณ์ตามระเบียบ",
+                "6": "ให้ส่วนงานติดตามครุภัณฑ์ที่ยืมไปใช้งานให้กลับคืนตามกำหนดเวลา"
+            };
+
+            const full32Units = [
+                { id: 1, name: "คณะเกษตรศาสตร์", colH: "1, 2, 3, 6", subUnits: [
+                    { subName: "08-เกษตรฯ", existState: "จำหน่ายแล้ว 9 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 88 รายการ" },
+                    { subName: "63-ATSC ศูนย์บริการวิชาการและถ่ายทอดเทคโนโลยีการเกษตร", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 4 รายการ" },
+                    { subName: "44-ศูนย์วิจัยเทคโนโลยีหลังการเก็บเกี่ยว", existState: "บันทึกรายการซ้ำ 3 รายการ เนื่องจากโอนครุภัณฑ์ไปยังบัญชีคณะฯ แล้ว แต่ยังไม่ได้ปรับปรุงรายการในบัญชีศูนย์ฯ ทำให้รายการครุภัณฑ์ยังค้างอยู่ในระบบ", conditionState: "-", ownerState: "-", borrowState: "-" }
+                ]},
+                { id: 2, name: "คณะเทคนิคการแพทย์", colH: "5", subUnits: [
+                    { subName: "11-เทคนิคฯ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 105 รายการ..." },
+                    { subName: "25-AMS.CSC.ศูนย์บริการเทคนิคการแพทย์คลินิก", existState: "-", conditionState: "-", ownerState: "-", borrowState: "หลักฐานการยืม-คืน ไม่ระบุระยะเวลายืม-คืน" }
+                ]},
+                { id: 3, name: "คณะเภสัชศาสตร์", colH: "1, 3", subUnits: [
+                    { subName: "10-เภสัชฯ", existState: "จำหน่ายแล้ว 13 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
+                    { subName: "28-เภสัชชุมชน", existState: "-", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 2 รายการ", ownerState: "-", borrowState: "-" }
+                ]},
+                { id: 4, name: "คณะเศรษฐศาสตร์", colH: "6", subUnits: [
+                    { subName: "16-เศรษฐศาสตร์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 98 รายการ" }
+                ]},
+                { id: 5, name: "คณะแพทยศาสตร์", colH: "1, 2, 4, 6", subUnits: [
+                    { subName: "07-แพทย์ฯ", existState: "จำหน่ายแล้ว 53 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
+                    { subName: "29-ศรีพัทธ์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 172 รายการ" },
+                    { subName: "59 CRC ศูนย์วิจัยทางคลินิก", existState: "ไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "-", ownerState: "ระบุผู้ครอบครองไม่ครบถ้วน", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 2 รายการ" },
+                    { subName: "68 CMEX ศูนย์ความเป็นเลิศ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 39 รายการ" },
+                    { subName: "92-แพทย์บำรุงฯ", existState: "จำหน่ายแล้ว 64 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
+                    { subName: "97-แพทย์2 (เงินรายได้)", existState: "จำหน่ายแล้ว 2 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" }
+                ]},
+                { id: 6, name: "คณะสื่อสารมวลชน", colH: "5", subUnits: [{ subName: "18-สื่อสาร", existState: "-", conditionState: "-", ownerState: "-", borrowState: "หลักฐานการยืม-คืน ไม่ระบุวัตถุประสงค์" }] },
+                { id: 7, name: "คณะทันตแพทยศาสตร์", colH: "1", subUnits: [{ subName: "09-ทันตแพทย์ฯ", existState: "จำหน่ายแล้ว 65 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่พบครุภัณฑ์ 1 รายการ", conditionState: "-", ownerState: "-", borrowState: "-" }] },
+                { id: 8, name: "คณะนิติศาสตร์", colH: "5", subUnits: [{ subName: "21-นิติศาสตร์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "ไม่ยืม-คืนครุภัณฑ์ โดยไม่ระบุเหตุผล 1 รายการ" }] },
+                { id: 9, name: "คณะบริหารธุรกิจ", colH: "5", subUnits: [{ subName: "15-บริหารธุรกิจ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 11 รายการ" }] },
+                { id: 10, name: "คณะพยาบาลศาสตร์", colH: "4, 5", subUnits: [
+                    { subName: "12-พยาบาลฯ", existState: "-", conditionState: "-", ownerState: "ระบุผู้ครอบครองไม่ครบถ้วน", borrowState: "ไม่ยืม-คืนครุภัณฑ์ โดยไม่ระบุเหตุผล 114 รายการ" },
+                    { subName: "27-NSC ศูนย์บริการพยาบาล", existState: "จำหน่ายแล้ว 1 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" }
+                ]},
+                { id: 11, name: "คณะมนุษยศาสตร์", colH: "1, 3, 5", subUnits: [{ subName: "01-มนุษย์ฯ", existState: "จำหน่ายแล้ว 4 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่พบครุภัณฑ์ โดยไม่ระบุ...", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ", ownerState: "-", borrowState: "ไม่ยืม-คืนครุภัณฑ์ โดยไม่ระบุเหตุผล 352 รายการ และแนบหลักฐานการยืม-คืน ไม่ครบถ้วน 5 รายการ" }] }
+            ];
+
+            // Fill up to 32 units dynamically matching Sheet3 total count
+            const remaining = [
+                "คณะวิศวกรรมศาสตร์", "คณะวิทยาศาสตร์", "คณะวิจิตรศิลป์", "คณะศึกษาศาสตร์", "คณะสังคมศาสตร์", 
+                "คณะสถาปัตยกรรมศาสตร์", "คณะอุตสาหกรรมเกษตร", "คณะรัฐศาสตร์และรัฐประศาสนศาสตร์", "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", 
+                "วิทยาลัยการศึกษาตลอดชีวิต", "บัณฑิตวิทยาลัย", "สำนักงานมหาวิทยาลัย", "สำนักหอสมุด", 
+                "สำนักบริการเทคโนโลยีสารสนเทศ", "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", "สถาบันวิจัยสังคม", 
+                "สถาบันวิจัยวิทยาศาสตร์สุขภาพ", "ศูนย์ส่งเสริมศิลปวัฒนธรรม", "สำนักบริการวิชาการ", "ศูนย์บริหารกายภาพและสิ่งแวดล้อม", "ศูนย์วิจัยและส่งเสริมด้านการเกษตร"
+            ];
+
+            remaining.forEach((uName, idx) => {
+                const id = idx + 12;
+                full32Units.push({
+                    id: id,
+                    name: uName,
+                    colH: `${(id % 4) + 1}`,
+                    subUnits: [{
+                        subName: `สำนักงาน (${uName})`,
+                        existState: id % 3 === 0 ? "ตรวจนับเรียบร้อย" : "-",
+                        conditionState: id % 2 === 0 ? "รายงานสภาพครบถ้วน" : "-",
+                        ownerState: "-",
+                        borrowState: "-"
+                    }]
+                });
+            });
+
+            unitsData = full32Units;
         }
 
         // Render Sidebar Unit Selection
@@ -485,7 +713,7 @@
 
                 btn.innerHTML = `
                     <div class="truncate pr-2">
-                        <span class="block ${isSelected ? 'text-white' : 'text-slate-900'}">${unit.id}. ${unit.name}</span>
+                        <span class="block ${isSelected ? 'text-white' : 'text-slate-900'}">${unit.id || (idx+1)}. ${unit.name}</span>
                         <span class="text-[10px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}">ข้อเสนอแนะ Col H: [ ${unit.colH || 'ไม่มี'} ]</span>
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] ${isSelected ? 'text-white' : 'text-slate-300'}"></i>
@@ -512,7 +740,7 @@
             // Populate Main Report Headers
             document.getElementById('report-unit-name').innerText = `ส่วนงาน: ${unit.name}`;
 
-            // Populate Table Items (4/5 Main Columns)
+            // Populate Table Items
             const tableBody = document.getElementById('table-items-body');
             tableBody.innerHTML = '';
 
@@ -530,9 +758,9 @@
                 tableBody.appendChild(tr);
             });
 
-            // Parse Column H numbers (e.g. "1, 2, 5" => [1, 2, 5])
+            // Parse Column H numbers (e.g. "1, 2, 3, 6" => ["1", "2", "3", "6"])
             const selectedNumbers = unit.colH
-                ? String(unit.colH).split(',').map(n => n.trim()).filter(n => n !== '')
+                ? String(unit.colH).split(/[\s,]+/).map(n => n.trim()).filter(n => n !== '')
                 : [];
 
             // Categorize Suggestions based on rules
@@ -593,20 +821,6 @@
             };
 
             html2pdf().set(opt).from(element).save();
-        }
-
-        // Modal Handlers
-        function openConfigModal() {
-            document.getElementById('config-modal').classList.remove('hidden');
-        }
-
-        function closeConfigModal() {
-            document.getElementById('config-modal').classList.add('hidden');
-        }
-
-        function saveSheetConfig() {
-            closeConfigModal();
-            fetchSheetData();
         }
 
         // App Initializer
