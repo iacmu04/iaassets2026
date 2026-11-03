@@ -159,7 +159,7 @@
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 0; /* Remove Browser Headers & Footers completely */
+                margin: 0.5in; /* กำหนดระยะขอบกระดาษ ซ้าย-ขวา-บน-ล่าง เป็น 0.5 นิ้ว */
             }
             html, body {
                 background: white !important;
@@ -175,7 +175,7 @@
             .printable-area {
                 width: 100% !important;
                 margin: 0 !important;
-                padding: 12mm 15mm !important; /* Internal page margin */
+                padding: 0 !important; /* ปล่อยให้ระยะขอบ 0.5in จาก @page เป็นผู้จัดการ */
                 box-shadow: none !important;
                 border: none !important;
             }
