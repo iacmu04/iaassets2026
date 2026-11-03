@@ -67,6 +67,7 @@
             font-size: 10pt !important;
             line-height: 1.5 !important;
             color: #1e293b;
+            white-space: pre-line; /* รองรับการขึ้นบรรทัดใหม่จากการ Alt+Enter ใน Google Sheet */
             text-indent: 1.5em; /* ย่อหน้าบรรทัดแรกเล็กน้อย */
         }
 
@@ -75,6 +76,13 @@
             line-height: 1.5 !important;
             color: #1e293b;
             padding-left: 1.5em;
+            white-space: pre-line; /* รองรับการขึ้นบรรทัดใหม่จากการ Alt+Enter ใน Google Sheet */
+        }
+
+        /* Formatting helper for line break preservation inside list items */
+        .suggestion-item-text {
+            white-space: pre-line;
+            display: block;
         }
 
         /* Clean Table Layout & Alignment */
@@ -628,16 +636,17 @@
                     cardEl.classList.remove('hidden');
 
                     if (matchedCodes.length === 1) {
-                        // Single item -> Text with first-line indent
+                        // Single item -> Text with preserved line breaks
                         const code = matchedCodes[0];
                         contentEl.className = "text-content-body";
                         contentEl.innerText = globalSuggestions[code];
                     } else {
-                        // Multiple items -> Numbered list with indentation
+                        // Multiple items -> Numbered list with preserved line breaks
                         contentEl.className = "text-content-body-list";
-                        let listHtml = '<ol class="list-decimal space-y-1 ml-4">';
+                        let listHtml = '<ol class="list-decimal space-y-2 ml-4">';
                         matchedCodes.forEach(code => {
-                            listHtml += `<li>${globalSuggestions[code]}</li>`;
+                            const formattedText = globalSuggestions[code];
+                            listHtml += `<li><span class="suggestion-item-text">${formattedText}</span></li>`;
                         });
                         listHtml += '</ol>';
                         contentEl.innerHTML = listHtml;
