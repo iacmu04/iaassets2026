@@ -32,6 +32,13 @@
         }
 
         /* Typography Specs */
+        .doc-header-tag {
+            font-size: 14pt !important;
+            font-weight: 500 !important;
+            color: #334155;
+            text-align: right !important;
+        }
+
         .title-unit-header {
             font-size: 20pt !important;
             font-weight: bold !important;
@@ -46,9 +53,15 @@
             color: #0f172a;
         }
 
+        .topic-subtitle {
+            font-size: 14pt !important;
+            font-weight: bold !important;
+            color: #0f172a;
+        }
+
         .text-content-body {
             font-size: 12pt !important;
-            line-height: 1.6 !important;
+            line-height: 1.5 !important;
             color: #1e293b;
         }
 
@@ -62,10 +75,10 @@
         table.report-table th {
             font-size: 12pt !important;
             font-weight: bold !important;
-            background-color: #f1f5f9 !important;
+            background-color: #f8fafc !important;
             color: #0f172a !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 8px 10px !important;
+            padding: 6px 8px !important;
             text-align: center !important; /* Header centered */
             vertical-align: middle !important;
             word-wrap: break-word !important;
@@ -75,9 +88,9 @@
         table.report-table td {
             font-size: 12pt !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 8px 10px !important;
+            padding: 6px 8px !important;
             vertical-align: top !important;
-            line-height: 1.6 !important;
+            line-height: 1.5 !important;
             word-wrap: break-word !important;
             overflow-wrap: break-word !important;
             white-space: normal !important;
@@ -91,19 +104,20 @@
             text-align: left !important;
         }
 
-        /* Print Media Styles for Native Crisp PDF Export */
+        /* Print Media Styles for Native Crisp PDF Export without browser headers/footers */
         @media print {
-            .no-print {
-                display: none !important;
+            @page {
+                size: A4 landscape;
+                margin: 10mm 15mm 10mm 15mm;
             }
-            body {
+            html, body {
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                font-size: 12pt !important;
             }
-            @page {
-                size: A4 landscape;
-                margin: 12mm 10mm 12mm 10mm;
+            .no-print {
+                display: none !important;
             }
             .printable-area {
                 width: 100% !important;
@@ -191,9 +205,10 @@
             <!-- PDF Target Container (Printable Clean Layout - No Outer Border) -->
             <div id="report-container" class="printable-area bg-white p-2 sm:p-4">
                 
-                <!-- Report Header (20pt Bold) -->
-                <div class="border-b-2 border-slate-900 pb-2 mb-4">
+                <!-- Document Top Bar: Tag at Top Right (14pt) -->
+                <div class="flex justify-between items-end border-b-2 border-slate-900 pb-2 mb-4">
                     <h2 class="title-unit-header" id="report-unit-name">คณะเกษตรศาสตร์</h2>
+                    <div class="doc-header-tag">เอกสารประกอบที่ 3</div>
                 </div>
 
                 <!-- Section 1: Table Data (Sheet 3) -->
@@ -228,7 +243,7 @@
                         
                         <!-- Topic 1 -->
                         <div id="topic-1-card" class="pdf-page-break-avoid hidden">
-                            <h4 class="font-bold text-slate-900 mb-1" style="font-size: 14pt;">
+                            <h4 class="topic-subtitle mb-1">
                                 ความมีอยู่ของครุภัณฑ์และความถูกต้องตรงกัน
                             </h4>
                             <div id="topic-1-content" class="text-content-body pl-3">
@@ -238,7 +253,7 @@
 
                         <!-- Topic 2 -->
                         <div id="topic-2-card" class="pdf-page-break-avoid hidden">
-                            <h4 class="font-bold text-slate-900 mb-1" style="font-size: 14pt;">
+                            <h4 class="topic-subtitle mb-1">
                                 สภาพครุภัณฑ์
                             </h4>
                             <div id="topic-2-content" class="text-content-body pl-3">
@@ -248,7 +263,7 @@
 
                         <!-- Topic 3 -->
                         <div id="topic-3-card" class="pdf-page-break-avoid hidden">
-                            <h4 class="font-bold text-slate-900 mb-1" style="font-size: 14pt;">
+                            <h4 class="topic-subtitle mb-1">
                                 ผู้ครอบครอง
                             </h4>
                             <div id="topic-3-content" class="text-content-body pl-3">
@@ -258,7 +273,7 @@
 
                         <!-- Topic 4 -->
                         <div id="topic-4-card" class="pdf-page-break-avoid hidden">
-                            <h4 class="font-bold text-slate-900 mb-1" style="font-size: 14pt;">
+                            <h4 class="topic-subtitle mb-1">
                                 การยืม-คืนครุภัณฑ์
                             </h4>
                             <div id="topic-4-content" class="text-content-body pl-3">
