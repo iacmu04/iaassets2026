@@ -65,8 +65,16 @@
 
         .text-content-body {
             font-size: 10pt !important;
-            line-height: 1.4 !important;
+            line-height: 1.5 !important;
             color: #1e293b;
+            text-indent: 1.5em; /* ย่อหน้าบรรทัดแรกเล็กน้อย */
+        }
+
+        .text-content-body-list {
+            font-size: 10pt !important;
+            line-height: 1.5 !important;
+            color: #1e293b;
+            padding-left: 1.5em; /* ย่อหน้าสำหรับรายการข้อเสนอแนะแบบรันเลข */
         }
 
         /* Clean Table Layout & Alignment */
@@ -79,14 +87,16 @@
         table.report-table th {
             font-size: 10pt !important;
             font-weight: bold !important;
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 5px 6px !important;
+            background-color: #e0f2fe !important; /* สีฟ้าอ่อน */
+            color: #0369a1 !important;
+            border: 1px solid #94a3b8 !important;
+            padding: 6px 6px !important;
             text-align: center !important; /* Header centered */
             vertical-align: middle !important;
             word-wrap: break-word !important;
             overflow-wrap: break-word !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         table.report-table td {
@@ -119,6 +129,8 @@
                 padding: 0 !important;
                 margin: 0 !important;
                 font-size: 10pt !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             .no-print {
                 display: none !important;
@@ -137,6 +149,12 @@
             table.report-table tr {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
+            }
+            table.report-table th {
+                background-color: #e0f2fe !important; /* บังคับให้หัวตารางเป็นสีฟ้าอ่อนใน PDF */
+                color: #0369a1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
         }
     </style>
@@ -299,6 +317,7 @@
         let currentUnitIndex = 0;
         let unitsData = [];
         let globalSuggestions = {};
+        let suggestionList = []; // Array storage for fallback matching
         
         // Target Sheet ID Embedded directly
         const SHEET_ID = "1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc";
@@ -403,15 +422,23 @@
         function parseSuggestionsCSV(csvText) {
             const rows = parseCSV(csvText);
             globalSuggestions = {};
+            suggestionList = [];
+            
             rows.forEach((r, index) => {
                 if (index === 0) return; // Skip Header
-                if (r.length >= 2) {
-                    // Extract code digits reliably by cleaning non-numeric characters
+                if (r.length >= 1) {
                     const rawKey = r[0] || '';
                     const key = rawKey.toString().replace(/[^0-9]/g, '').trim();
-                    const val = r[1] ? r[1].replace(/^"|"$/g, '').trim() : '';
-                    if (key && val) {
-                        globalSuggestions[key] = val;
+                    const val = r[1] ? r[1].replace(/^"|"$/g, '').trim() : (r[0] ? r[0].replace(/^"|"$/g, '').trim() : '');
+                    
+                    if (val) {
+                        const sugIndex = (suggestionList.length + 1).toString();
+                        if (key) {
+                            globalSuggestions[key] = val;
+                        }
+                        // Also store by index fallback
+                        globalSuggestions[sugIndex] = globalSuggestions[sugIndex] || val;
+                        suggestionList.push(val);
                     }
                 }
             });
@@ -441,15 +468,24 @@
                         id: parsedUnits.length + 1,
                         seq: seq || (parsedUnits.length + 1),
                         name: unitName,
-                        colH: colH || '', 
+                        colHList: [], // Store all collected colH values
+                        colH: '',
                         subUnits: []
                     };
                     parsedUnits.push(currentUnit);
                 }
 
-                // If colH exists on sub-rows or main row, record it
-                if (currentUnit && colH && !currentUnit.colH) {
-                    currentUnit.colH = colH;
+                // Append any found colH numbers for this unit
+                if (currentUnit && colH) {
+                    const foundNums = String(colH).match(/\d+/g);
+                    if (foundNums) {
+                        foundNums.forEach(n => {
+                            const cleanN = String(parseInt(n, 10));
+                            if (!currentUnit.colHList.includes(cleanN)) {
+                                currentUnit.colHList.push(cleanN);
+                            }
+                        });
+                    }
                 }
 
                 // Append Sub-unit item row
@@ -462,6 +498,11 @@
                         borrowState: borrowState
                     });
                 }
+            });
+
+            // Format colH string for display
+            parsedUnits.forEach(u => {
+                u.colH = u.colHList.join(', ');
             });
 
             if (parsedUnits.length > 0) {
@@ -481,54 +522,29 @@
             };
 
             const full32Units = [
-                { id: 1, name: "คณะเกษตรศาสตร์", colH: "1, 2, 3, 6", subUnits: [
+                { id: 1, name: "คณะเกษตรศาสตร์", colH: "1, 2, 3, 6", colHList: ["1", "2", "3", "6"], subUnits: [
                     { subName: "08-เกษตรฯ", existState: "จำหน่ายแล้ว 9 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 88 รายการ" },
                     { subName: "63-ATSC ศูนย์บริการวิชาการและถ่ายทอดเทคโนโลยีการเกษตร", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 4 รายการ" },
                     { subName: "44-ศูนย์วิจัยเทคโนโลยีหลังการเก็บเกี่ยว", existState: "บันทึกรายการซ้ำ 3 รายการ เนื่องจากโอนครุภัณฑ์ไปยังบัญชีคณะฯ แล้ว แต่ยังไม่ได้ปรับปรุงรายการในบัญชีศูนย์ฯ ทำให้รายการครุภัณฑ์ยังค้างอยู่ในระบบ ซึ่งซ้ำซ้อนกับรายการในบัญชีคณะฯ", conditionState: "-", ownerState: "-", borrowState: "-" }
                 ]},
-                { id: 2, name: "คณะเทคนิคการแพทย์", colH: "5", subUnits: [
+                { id: 2, name: "คณะเทคนิคการแพทย์", colH: "5", colHList: ["5"], subUnits: [
                     { subName: "11-เทคนิคฯ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 105 รายการ เจ้าหน้าที่ชี้แจงว่า มีการควบคุมการนำไปใช้งานและติดตามการนำส่งคืน โดยเจ้าหน้าที่ได้รับมอบหมายให้รับผิดชอบครุภัณฑ์นั้น ทั้งนี้ คณะฯ รับทราบแนวปฏิบัติและได้ดำเนินการปรับปรุงกระบวนการยืม-คืนตามกฎระเบียบแล้ว" },
                     { subName: "25-AMS.CSC.ศูนย์บริการเทคนิคการแพทย์คลินิก", existState: "-", conditionState: "-", ownerState: "-", borrowState: "หลักฐานการยืม-คืน ไม่ระบุระยะเวลายืม-คืน" }
                 ]},
-                { id: 3, name: "คณะเภสัชศาสตร์", colH: "1, 3", subUnits: [
+                { id: 3, name: "คณะเภสัชศาสตร์", colH: "1, 3", colHList: ["1", "3"], subUnits: [
                     { subName: "10-เภสัชฯ", existState: "จำหน่ายแล้ว 13 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
                     { subName: "28-เภสัชชุมชน", existState: "-", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 2 รายการ", ownerState: "-", borrowState: "-" }
                 ]},
-                { id: 4, name: "คณะเศรษฐศาสตร์", colH: "6", subUnits: [
+                { id: 4, name: "คณะเศรษฐศาสตร์", colH: "6", colHList: ["6"], subUnits: [
                     { subName: "16-เศรษฐศาสตร์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 98 รายการ" }
                 ]},
-                { id: 5, name: "คณะแพทยศาสตร์", colH: "1, 2, 4, 6", subUnits: [
+                { id: 5, name: "คณะแพทยศาสตร์", colH: "1, 2, 4, 6", colHList: ["1", "2", "4", "6"], subUnits: [
                     { subName: "07-แพทย์ฯ", existState: "จำหน่ายแล้ว 53 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
                     { subName: "29-ศรีพัฒน์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 172 รายการ" },
                     { subName: "59 CRC ศูนย์วิจัยทางคลินิก", existState: "ไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "-", ownerState: "ระบุผู้ครอบครองไม่ครบถ้วน", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 2 รายการ" },
                     { subName: "68 CMEX ศูนย์ความเป็นเลิศ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 39 รายการ" }
                 ]}
             ];
-
-            const remaining = [
-                "คณะสื่อสารมวลชน", "คณะทันตแพทยศาสตร์", "คณะนิติศาสตร์", "คณะบริหารธุรกิจ", "คณะพยาบาลศาสตร์", 
-                "คณะมนุษยศาสตร์", "คณะวิศวกรรมศาสตร์", "คณะวิทยาศาสตร์", "คณะวิจิตรศิลป์", "คณะศึกษาศาสตร์", "คณะสังคมศาสตร์", 
-                "คณะสถาปัตยกรรมศาสตร์", "คณะอุตสาหกรรมเกษตร", "คณะรัฐศาสตร์และรัฐประศาสนศาสตร์", "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", 
-                "วิทยาลัยการศึกษาตลอดชีวิต", "บัณฑิตวิทยาลัย", "สำนักงานมหาวิทยาลัย", "สำนักหอสมุด", 
-                "สำนักบริการเทคโนโลยีสารสนเทศ", "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", "สถาบันวิจัยสังคม", 
-                "สถาบันวิจัยวิทยาศาสตร์สุขภาพ", "ศูนย์ส่งเสริมศิลปวัฒนธรรม", "สำนักบริการวิชาการ", "ศูนย์บริหารกายภาพและสิ่งแวดล้อม", "ศูนย์วิจัยและส่งเสริมด้านการเกษตร"
-            ];
-
-            remaining.forEach((uName, idx) => {
-                const id = idx + 6;
-                full32Units.push({
-                    id: id,
-                    name: uName,
-                    colH: `${(id % 4) + 1}`,
-                    subUnits: [{
-                        subName: `สำนักงานส่วนงาน (${uName})`,
-                        existState: id % 3 === 0 ? "ตรวจนับเรียบร้อย" : "-",
-                        conditionState: id % 2 === 0 ? "รายงานสภาพครบถ้วน" : "-",
-                        ownerState: "-",
-                        borrowState: "-"
-                    }]
-                });
-            });
 
             unitsData = full32Units;
         }
@@ -597,10 +613,9 @@
                 tableBody.appendChild(tr);
             });
 
-            // Ultra-Robust Parsing for Column H Numbers (Extract all digits separated by comma/spaces)
-            let selectedNumbers = [];
-            if (unit.colH) {
-                // Matches all sequences of numbers in string (e.g. "1, 3" -> ["1", "3"])
+            // Extract all requested suggestion numbers for this unit
+            let selectedNumbers = unit.colHList || [];
+            if (selectedNumbers.length === 0 && unit.colH) {
                 const matches = String(unit.colH).match(/\d+/g);
                 if (matches) {
                     selectedNumbers = matches.map(num => String(parseInt(num, 10)));
@@ -655,7 +670,7 @@
             } else {
                 const listHtml = validCodes.map((num, i) => {
                     const text = globalSuggestions[num];
-                    return `<div class="text-content-body mb-1"><span class="font-bold mr-1.5">${i + 1}.</span>${text}</div>`;
+                    return `<div class="text-content-body-list mb-1"><span class="font-bold mr-1.5">${i + 1}.</span>${text}</div>`;
                 }).join('');
                 container.innerHTML = listHtml;
             }
