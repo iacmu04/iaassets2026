@@ -406,9 +406,10 @@
             rows.forEach((r, index) => {
                 if (index === 0) return; // Skip Header
                 if (r.length >= 2) {
-                    // Extract code digits reliably
-                    const key = r[0].replace(/[^0-9]/g, '').trim();
-                    const val = r[1].replace(/^"|"$/g, '').trim();
+                    // Extract code digits reliably by cleaning non-numeric characters
+                    const rawKey = r[0] || '';
+                    const key = rawKey.toString().replace(/[^0-9]/g, '').trim();
+                    const val = r[1] ? r[1].replace(/^"|"$/g, '').trim() : '';
                     if (key && val) {
                         globalSuggestions[key] = val;
                     }
@@ -446,7 +447,7 @@
                     parsedUnits.push(currentUnit);
                 }
 
-                // If colH exists on sub-rows, append it to currentUnit's colH
+                // If colH exists on sub-rows or main row, record it
                 if (currentUnit && colH && !currentUnit.colH) {
                     currentUnit.colH = colH;
                 }
@@ -596,14 +597,14 @@
                 tableBody.appendChild(tr);
             });
 
-            // Advanced Parsing for Column H Numbers (e.g. "1, 2, 4, 6" or "1,2")
+            // Ultra-Robust Parsing for Column H Numbers (Extract all digits separated by comma/spaces)
             let selectedNumbers = [];
             if (unit.colH) {
-                // Split by commas or whitespace, extract clean digits
-                const rawParts = String(unit.colH).split(/[,,\s\n\r]+/);
-                selectedNumbers = rawParts
-                    .map(p => p.replace(/[^0-9]/g, '').trim())
-                    .filter(p => p !== '');
+                // Matches all sequences of numbers in string (e.g. "1, 3" -> ["1", "3"])
+                const matches = String(unit.colH).match(/\d+/g);
+                if (matches) {
+                    selectedNumbers = matches.map(num => String(parseInt(num, 10)));
+                }
             }
 
             // Categorize Suggestions based on rules
@@ -654,7 +655,7 @@
             } else {
                 const listHtml = validCodes.map((num, i) => {
                     const text = globalSuggestions[num];
-                    return `<div class="text-content-body mb-0.5"><span class="font-bold mr-1">${i + 1}.</span>${text}</div>`;
+                    return `<div class="text-content-body mb-1"><span class="font-bold mr-1.5">${i + 1}.</span>${text}</div>`;
                 }).join('');
                 container.innerHTML = listHtml;
             }
