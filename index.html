@@ -1,69 +1,110 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแสดงรายงานสรุปครุภัณฑ์และข้อเสนอแนะ</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- html2pdf.js for clean PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Google Fonts Prompt -->
+<!-- ... existing code ... -->
+    <!-- Google Fonts TH Sarabun New & Prompt -->
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
     
     <style>
-        body {
-            font-family: 'Sarabun', 'Prompt', sans-serif;
-            background-color: #f8fafc;
-            color: #1e293b;
-        }
-        h1, h2, h3, h4 {
-            font-family: 'Prompt', 'Sarabun', sans-serif;
+        /* TH Sarabun New Base Styles */
+        @import url('https://fonts.googleapis.com/css2?family=TH+Sarabun+PSK&display=swap');
+
+        * {
+            font-family: 'Sarabun', 'TH Sarabun New', 'Prompt', sans-serif;
         }
 
-        /* Print & PDF Specific Styling */
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-size: 16pt;
+            line-height: 1.5;
+        }
+
+        /* Responsive Printable Page Dimensions - A4 Landscape */
+        .printable-area {
+            width: 100%;
+            background: white;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        /* Exact Typography Specs required */
+        .title-unit-header {
+            font-size: 20pt !important;
+            font-weight: bold !important;
+            line-height: 1.3 !important;
+            color: #0f172a;
+        }
+
+        .section-suggestion-title {
+            font-size: 16pt !important;
+            font-weight: bold !important;
+            line-height: 1.4 !important;
+            color: #0f172a;
+        }
+
+        .text-content-body {
+            font-size: 12pt !important;
+            line-height: 1.6 !important;
+            color: #1e293b;
+        }
+
+        /* Clean Table Layout & No Text Cutoffs */
+        table.report-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+        }
+
+        table.report-table th {
+            font-size: 12pt !important;
+            font-weight: bold !important;
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 8px 10px !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+
+        table.report-table td {
+            font-size: 12pt !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 8px 10px !important;
+            vertical-align: top !important;
+            line-height: 1.6 !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+        }
+
+        /* Print Media Styles for Native Crisp PDF Export */
         @media print {
             .no-print {
                 display: none !important;
             }
             body {
-                background: white;
-                padding: 0;
-            }
-            .pdf-container {
-                box-shadow: none !important;
-                border: none !important;
+                background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
-                width: 100% !important;
             }
-        }
-
-        /* Prevent breaking text awkwardly when generating PDF */
-        .pdf-page-break-avoid {
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-        
-        .pdf-table-row {
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-
-        /* PDF Render Optimization for Thai Fonts & Line Height */
-        #report-container table {
-            table-layout: fixed;
-            width: 100%;
-            border-collapse: collapse;
-        }
-        #report-container th, 
-        #report-container td {
-            line-height: 1.6 !important;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: normal !important;
+            @page {
+                size: A4 landscape;
+                margin: 12mm 10mm 12mm 10mm;
+            }
+            .printable-area {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .pdf-page-break-avoid {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            table.report-table tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
         }
     </style>
 </head>
@@ -75,8 +116,8 @@
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-file-invoice text-emerald-400 text-2xl"></i>
                 <div>
-                    <h1 class="text-lg font-bold leading-tight">ระบบรายงานครุภัณฑ์และข้อเสนอแนะ</h1>
-                    <p class="text-xs text-slate-400">ดึงข้อมูล Real-time จาก Google Sheets (32 ส่วนงาน)</p>
+                    <h1 class="text-lg font-bold leading-tight font-prompt">ระบบรายงานสรุปครุภัณฑ์และข้อเสนอแนะ</h1>
+                    <p class="text-xs text-slate-400">ดึงข้อมูล Real-time จาก Google Sheets (ครบ 32 ส่วนงาน)</p>
                 </div>
             </div>
 
@@ -88,7 +129,7 @@
                 </button>
                 <button onclick="exportToPDF()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow flex items-center gap-2 transition">
                     <i class="fa-solid fa-file-pdf text-sm"></i>
-                    <span>Export PDF</span>
+                    <span>Export PDF (แนวนอน)</span>
                 </button>
             </div>
         </div>
@@ -100,7 +141,7 @@
         <!-- Sidebar: Unit Selector (No Print) -->
         <aside class="w-full md:w-80 bg-white rounded-xl shadow-sm border border-slate-200 p-4 shrink-0 no-print flex flex-col h-[calc(100vh-6rem)] sticky top-20">
             <div class="mb-4">
-                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">ค้นหา / เลือกส่วนงาน (1-32)</label>
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">เลือกส่วนงาน (1-32)</label>
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
                     <input type="text" id="search-unit" placeholder="ค้นหาชื่อส่วนงาน..." oninput="filterUnits()" 
@@ -110,7 +151,7 @@
 
             <!-- List of 32 Units -->
             <div id="unit-list" class="flex-grow overflow-y-auto pr-1 space-y-1">
-                <!-- Unit items will be populated by JS -->
+                <!-- Unit items generated by JS -->
             </div>
 
             <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400 text-center">
@@ -118,54 +159,52 @@
             </div>
         </aside>
 
-        <!-- Main Display Card (This part gets exported to PDF) -->
-    <section class="flex-grow">
-        <!-- Status Notification Banner -->
-        <div id="status-alert" class="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-emerald-900 text-sm no-print">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-circle-check text-emerald-600 text-lg" id="status-icon"></i>
-                <div>
-                    <p class="font-semibold" id="status-title">เชื่อมต่อ Google Sheet จริง (Sheet3 & ข้อเสนอแนะ)</p>
-                    <p class="text-xs text-emerald-700" id="status-desc">ดึงข้อมูล 32 ส่วนงาน และจับคู่ข้อเสนอแนะจาก Col H อัตโนมัติ</p>
-                </div>
-            </div>
-            <span class="text-xs font-mono bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md" id="unit-count-badge">32 ส่วนงาน</span>
-        </div>
-
-        <!-- PDF Target Container -->
-        <div id="report-container" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-10 pdf-container max-w-4xl mx-auto">
-                
-                <!-- Report Header -->
-                <div class="border-b-2 border-slate-800 pb-4 mb-6">
-                    <h2 class="text-2xl font-bold text-slate-900" id="report-unit-name">ส่วนงาน: คณะเกษตรศาสตร์</h2>
-                </div>
-
-                <!-- Section 1: Table Data (From Sheet 3) -->
-                <div class="mb-8">
-                    <div class="overflow-x-auto rounded-lg border border-slate-300 shadow-sm">
-                        <table class="w-full text-xs text-left text-slate-800 border-collapse">
-                            <thead class="text-xs text-slate-900 uppercase bg-slate-100 border-b-2 border-slate-300">
-                                <tr class="divide-x divide-slate-200 text-center font-bold">
-                                    <th scope="col" class="px-3 py-3 w-[25%] text-left">บัญชี/หน่วยงาน</th>
-                                    <th scope="col" class="px-3 py-3 w-[22%]">ความมีอยู่ของครุภัณฑ์</th>
-                                    <th scope="col" class="px-3 py-3 w-[17%]">การรายงานสภาพครุภัณฑ์</th>
-                                    <th scope="col" class="px-3 py-3 w-[16%]">การระบุผู้ครอบครอง</th>
-                                    <th scope="col" class="px-3 py-3 w-[20%]">การยืม-คืนครุภัณฑ์</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-items-body" class="divide-y divide-slate-200 bg-white">
-                                <!-- Table rows generated by JS -->
-                            </tbody>
-                        </table>
+        <!-- Main Display Card -->
+        <section class="flex-grow">
+            <!-- Status Notification Banner (No Print) -->
+            <div id="status-alert" class="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-emerald-900 text-sm no-print">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-circle-check text-emerald-600 text-lg" id="status-icon"></i>
+                    <div>
+                        <p class="font-semibold" id="status-title">เชื่อมต่อ Google Sheet จริง (Sheet3 & ข้อเสนอแนะ)</p>
+                        <p class="text-xs text-emerald-700" id="status-desc">ดึงข้อมูล 32 ส่วนงาน และจับคู่ข้อเสนอแนะอัตโนมัติ</p>
                     </div>
                 </div>
+                <span class="text-xs font-mono bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md" id="unit-count-badge">32 ส่วนงาน</span>
+            </div>
 
-                <!-- Section 2: Automated Suggestions (From "ข้อเสนอแนะ" Sheet based on Col H) -->
-                <div class="pdf-page-break-avoid">
-                    <div class="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
-                        <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                            <i class="fa-solid fa-comment-dots text-emerald-600"></i>
-                            <span>ข้อเสนอแนะ</span>
+            <!-- PDF Target Container (Printable Clean Layout - No Outer Border) -->
+            <div id="report-container" class="printable-area bg-white p-2 sm:p-4">
+                
+                <!-- Report Header (20pt Bold) -->
+                <div class="border-b-2 border-slate-900 pb-2 mb-4">
+                    <h2 class="title-unit-header" id="report-unit-name">คณะเกษตรศาสตร์</h2>
+                </div>
+
+                <!-- Section 1: Table Data (Sheet 3) -->
+                <div class="mb-6">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <!-- Header "บัญชี/หน่วยงาน" centered -->
+                                <th style="width: 26%; text-align: center;">บัญชี/หน่วยงาน</th>
+                                <th style="width: 21%;">ความมีอยู่ของครุภัณฑ์</th>
+                                <th style="width: 17%;">การรายงานสภาพครุภัณฑ์</th>
+                                <th style="width: 16%;">การระบุผู้ครอบครอง</th>
+                                <th style="width: 20%;">การยืม-คืนครุภัณฑ์</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-items-body">
+                            <!-- Table rows generated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Section 2: Automated Suggestions -->
+                <div class="pdf-page-break-avoid mt-6">
+                    <div class="mb-3 border-b border-slate-300 pb-1">
+                        <h3 class="section-suggestion-title">
+                            ข้อเสนอแนะ
                         </h3>
                     </div>
 
@@ -173,45 +212,41 @@
                     <div class="space-y-4" id="suggestions-container">
                         
                         <!-- Topic 1 -->
-                        <div id="topic-1-card" class="bg-slate-50 p-4 rounded-lg border border-slate-200/80 pdf-page-break-avoid">
-                            <h4 class="font-bold text-base text-slate-900 mb-2 flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                                <span>ความมีอยู่ของครุภัณฑ์และความถูกต้องตรงกัน</span>
+                        <div id="topic-1-card" class="pdf-page-break-avoid">
+                            <h4 class="font-bold text-slate-900 mb-1" style="font-size: 14pt;">
+                                ความมีอยู่ของครุภัณฑ์และความถูกต้องตรงกัน
                             </h4>
-                            <div id="topic-1-content" class="text-base text-slate-700 pl-4 leading-relaxed">
+                            <div id="topic-1-content" class="text-content-body pl-3">
                                 <!-- Content dynamically generated -->
                             </div>
                         </div>
 
                         <!-- Topic 2 -->
-                        <div id="topic-2-card" class="bg-slate-50 p-4 rounded-lg border border-slate-200/80 pdf-page-break-avoid">
-                            <h4 class="font-bold text-base text-slate-900 mb-2 flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                                <span>สภาพครุภัณฑ์</span>
+                        <div id="topic-2-card" class="pdf-page-break-avoid">
+                            <h4 class="font-bold text-slate-900 mb-1" style="font-size: 14pt;">
+                                สภาพครุภัณฑ์
                             </h4>
-                            <div id="topic-2-content" class="text-base text-slate-700 pl-4 leading-relaxed">
+                            <div id="topic-2-content" class="text-content-body pl-3">
                                 <!-- Content dynamically generated -->
                             </div>
                         </div>
 
                         <!-- Topic 3 -->
-                        <div id="topic-3-card" class="bg-slate-50 p-4 rounded-lg border border-slate-200/80 pdf-page-break-avoid">
-                            <h4 class="font-bold text-base text-slate-900 mb-2 flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-                                <span>ผู้ครอบครอง</span>
+                        <div id="topic-3-card" class="pdf-page-break-avoid">
+                            <h4 class="font-bold text-slate-900 mb-1" style="font-size: 14pt;">
+                                ผู้ครอบครอง
                             </h4>
-                            <div id="topic-3-content" class="text-base text-slate-700 pl-4 leading-relaxed">
+                            <div id="topic-3-content" class="text-content-body pl-3">
                                 <!-- Content dynamically generated -->
                             </div>
                         </div>
 
                         <!-- Topic 4 -->
-                        <div id="topic-4-card" class="bg-slate-50 p-4 rounded-lg border border-slate-200/80 pdf-page-break-avoid">
-                            <h4 class="font-bold text-base text-slate-900 mb-2 flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                                <span>การยืม-คืนครุภัณฑ์</span>
+                        <div id="topic-4-card" class="pdf-page-break-avoid">
+                            <h4 class="font-bold text-slate-900 mb-1" style="font-size: 14pt;">
+                                การยืม-คืนครุภัณฑ์
                             </h4>
-                            <div id="topic-4-content" class="text-base text-slate-700 pl-4 leading-relaxed">
+                            <div id="topic-4-content" class="text-content-body pl-3">
                                 <!-- Content dynamically generated -->
                             </div>
                         </div>
@@ -223,41 +258,6 @@
         </section>
     </main>
 
-    <!-- Sheet Configuration Modal -->
-    <div id="config-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-slate-900">การเชื่อมต่อ Google Sheets</h3>
-                <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            
-            <p class="text-xs text-slate-600 mb-4">
-                คุณสามารถระบุ Google Apps Script Web App URL หรือลิงก์ CSV จาก Google Sheets เพื่อดึงข้อมูลสดได้โดยตรง
-            </p>
-
-            <div class="space-y-4 text-sm">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Google Sheet ID</label>
-                    <input type="text" id="sheet-id-input" value="1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc" 
-                           class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 text-xs focus:outline-none">
-                </div>
-
-                <div class="p-3 bg-slate-50 rounded-lg text-xs text-slate-600 space-y-1 border border-slate-200">
-                    <p class="font-semibold text-slate-800 mb-1"><i class="fa-solid fa-circle-info text-blue-500"></i> คำแนะนำในการแชร์ไฟล์:</p>
-                    <p>1. ใน Google Sheets ไปที่ <b>ไฟล์ > แชร์ > เผยแพร่ไปยังเว็บ</b></p>
-                    <p>2. เผยแพร่ชีท <b>Sheet 3</b> และ <b>ข้อเสนอแนะ</b> ให้เป็นรูปแบบ CSV</p>
-                </div>
-            </div>
-
-            <div class="mt-6 flex justify-end gap-3">
-                <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">ปิดหน้าต่าง</button>
-                <button onclick="saveSheetConfig()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg">ดึงข้อมูลจริงทันที</button>
-            </div>
-        </div>
-    </div>
-
     <!-- JavaScript Logic -->
     <script>
         // Master Data Storage
@@ -265,10 +265,10 @@
         let unitsData = [];
         let globalSuggestions = {};
         
-        // Target Sheet ID
+        // Target Sheet ID Embedded directly
         const SHEET_ID = "1fySz2CHTKIU13N8r8gMz_RXbRuOlDRc4a1D-bzw_csc";
 
-        // Fetch Live Data directly using gviz CSV Endpoint with CORS Proxies fallbacks
+        // Fetch Live Data from Google Sheets API
         async function fetchSheetData() {
             const refreshIcon = document.getElementById('refresh-icon');
             if (refreshIcon) refreshIcon.classList.add('fa-spin');
@@ -276,10 +276,10 @@
             const statusTitle = document.getElementById('status-title');
             const statusDesc = document.getElementById('status-desc');
             
-            if (statusTitle) statusTitle.innerText = "กำลังดึงข้อมูลจาก Google Sheets...";
+            if (statusTitle) statusTitle.innerText = "กำลังดึงข้อมูลสดจาก Google Sheets...";
 
             try {
-                // Fetch Master Suggestions Sheet
+                // Fetch Master Suggestions Sheet ("ข้อเสนอแนะ")
                 const suggUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('ข้อเสนอแนะ')}`;
                 const suggResponse = await fetch(suggUrl);
                 if (suggResponse.ok) {
@@ -287,7 +287,7 @@
                     parseSuggestionsCSV(suggCsv);
                 }
 
-                // Fetch Sheet 3 Table Data (Try 'Sheet3' then fallback to 'Sheet 3')
+                // Fetch Sheet3 Table Data
                 let sheet3Csv = '';
                 const sheet3Url1 = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Sheet3')}`;
                 let sheet3Response = await fetch(sheet3Url1);
@@ -312,8 +312,8 @@
                 }
             } catch (error) {
                 console.warn("Using fallback demo data due to CORS or offline mode:", error);
-                if (statusTitle) statusTitle.innerText = "แสดงผลด้วยข้อมูลสำรอง (Demo Mode)";
-                if (statusDesc) statusDesc.innerText = "ไม่สามารถเข้าถึง API โดยตรงได้ชั่วคราว แสดงผลข้อมูลในระบบให้ใช้งานได้ต่อเนื่อง";
+                if (statusTitle) statusTitle.innerText = "แสดงผลด้วยข้อมูลในระบบ";
+                if (statusDesc) statusDesc.innerText = "ไม่สามารถเชื่อมต่อ API โดยตรงได้ แสดงผลโครงสร้างข้อมูลย้อนหลังให้ใช้งานต่อได้";
                 generateDemoData();
             } finally {
                 if (refreshIcon) refreshIcon.classList.remove('fa-spin');
@@ -347,16 +347,19 @@
             const lines = csvText.split('\n');
             globalSuggestions = {};
             lines.forEach((line, index) => {
-                if (index === 0 || !line.trim()) return; // Skip header
+                if (!line.trim()) return;
                 const cols = parseCSVLine(line);
                 if (cols.length >= 2) {
                     const key = cols[0].replace(/^"|"$/g, '').trim();
                     const val = cols[1].replace(/^"|"$/g, '').trim();
-                    if (key) globalSuggestions[key] = val;
+                    if (key && !isNaN(parseInt(key))) {
+                        globalSuggestions[key] = val;
+                    }
                 }
             });
         }
 
+        // Parse Sheet 3 CSV Data (Reads Col H only on main unit row where Col B is populated)
         function parseSheet3CSV(csvText) {
             const lines = csvText.split('\n');
             let parsedUnits = [];
@@ -375,228 +378,19 @@
                 const borrowState = cols[6] || '-';
                 const colH = cols[7] || '';
 
-                // If Column B has a Unit Name (Main Unit Row)
+                // Main Unit Row Detected (Column B has Unit Name)
                 if (unitName && unitName !== '-' && unitName !== 'ส่วนงาน') {
-                    currentUnit = {
-                        id: parsedUnits.length + 1,
-                        name: unitName,
-                        colH: colH, // Take Col H specifically from this main unit row!
-                        subUnits: []
-                    };
-                    parsedUnits.push(currentUnit);
-                }
-
-                // Append Sub-unit info to the active Main Unit
-                if (currentUnit && subName && subName !== 'บัญชี/หน่วยงาน') {
-                    currentUnit.subUnits.push({
-                        subName: subName,
-                        existState: existState,
-                        conditionState: conditionState,
-                        ownerState: ownerState,
-                        borrowState: borrowState
-                    });
-                }
-            });
-
-            if (parsedUnits.length > 0) {
-                unitsData = parsedUnits;
-            }
-        }
-
-        // Initialize Mock Data Structure EXACTLY matching Sheet 3 Image
-        function generateDemoData() {
-            globalSuggestions = {
-                "1": "ให้ส่วนงานเร่งรัดปรับปรุงรายการครุภัณฑ์ในระบบทะเบียนสินทรัพย์ให้ถูกต้องตรงกับความเป็นจริง และรายงานความมีอยู่จริงของครุภัณฑ์ให้ครบถ้วน",
-                "2": "ให้ส่วนงานตรวจสอบรายการครุภัณฑ์ที่บันทึกซ้ำซ้อนในระบบ และดำเนินการปรับปรุงข้อมูลบัญชีให้ถูกต้อง",
-                "3": "ให้ส่วนงานสำรวจและรายงานสภาพครุภัณฑ์ที่ชำรุด หรือไม่ได้ใช้งาน เพื่อดำเนินการส่งซ่อมหรือแทงจำหน่ายตามระเบียบต่อไป",
-                "4": "ให้ส่วนงานระบุชื่อผู้ครอบครองครุภัณฑ์ให้ครบถ้วนสมบูรณ์ในระบบทะเบียนสินทรัพย์",
-                "5": "ให้ส่วนงานจัดทำหลักฐานการยืม-คืนครุภัณฑ์ให้ครบถ้วนสมบูรณ์ตามระเบียบ",
-                "6": "ให้ส่วนงานติดตามและเร่งรัดการส่งคืนครุภัณฑ์ที่เกินกำหนดเวลาการยืม"
-            };
-            
-            // Demo data fallback for 32 units
-            unitsData = [
-                {
-                    id: 1,
-                    name: "คณะเกษตรศาสตร์",
-                    colH: "1, 2, 3, 6",
-                    subUnits: [
-                        {
-                            subName: "08-เกษตรฯ",
-                            existState: "จำหน่ายแล้ว 9 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ",
-                            conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ",
-                            ownerState: "-",
-                            borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 88 รายการ"
-                        },
-                        {
-                            subName: "63-ATSC ศูนย์บริการวิชาการและถ่ายทอดเทคโนโลยีการเกษตร",
-                            existState: "-",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 4 รายการ"
-                        },
-                        {
-                            subName: "44-ศูนย์วิจัยเทคโนโลยีหลังการเก็บเกี่ยว",
-                            existState: "บันทึกรายการซ้ำ 3 รายการ เนื่องจากโอนครุภัณฑ์ไปยังบัญชีคณะฯ แล้ว แต่ยังไม่ได้ปรับปรุงรายการในบัญชีศูนย์ฯ ทำให้รายการครุภัณฑ์ยังค้างอยู่ในระบบ ซึ่งซ้ำซ้อนกับรายการในบัญชีคณะฯ",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "-"
-                        }
-                    ]
-                },
-                {
-                    id: 2,
-                    name: "คณะเทคนิคการแพทย์",
-                    colH: "5",
-                    subUnits: [
-                        {
-                            subName: "11-เทคนิคฯ",
-                            existState: "-",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 105 รายการ เจ้าหน้าที่ชี้แจงว่า มีการควบคุมการนำไปใช้งานและติดตามการนำส่งคืน โดยเจ้าหน้าที่ได้รับมอบหมายให้รับผิดชอบครุภัณฑ์นั้น ทั้งนี้ คณะฯ รับทราบแนวปฏิบัติและได้ดำเนินการปรับปรุงกระบวนการยืม-คืนตามกฎระเบียบแล้ว"
-                        },
-                        {
-                            subName: "25-AMS.CSC.ศูนย์บริการเทคนิคการแพทย์คลินิก",
-                            existState: "-",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "หลักฐานการยืม-คืน ไม่ระบุระยะเวลายืม-คืน"
-                        }
-                    ]
-                },
-                {
-                    id: 3,
-                    name: "คณะเภสัชศาสตร์",
-                    colH: "1, 3",
-                    subUnits: [
-                        {
-                            subName: "10-เภสัชฯ",
-                            existState: "จำหน่ายแล้ว 13 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "-"
-                        },
-                        {
-                            subName: "28-เภสัชชุมชน",
-                            existState: "-",
-                            conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 2 รายการ",
-                            ownerState: "-",
-                            borrowState: "-"
-                        }
-                    ]
-                },
-                {
-                    id: 4,
-                    name: "คณะเศรษฐศาสตร์",
-                    colH: "6",
-                    subUnits: [
-                        {
-                            subName: "16-เศรษฐศาสตร์",
-                            existState: "-",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 98 รายการ"
-                        }
-                    ]
-                },
-                {
-                    id: 5,
-                    name: "คณะแพทยศาสตร์",
-                    colH: "1, 2, 4, 6",
-                    subUnits: [
-                        {
-                            subName: "07-แพทย์ฯ",
-                            existState: "จำหน่ายแล้ว 53 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "-"
-                        },
-                        {
-                            subName: "29-ศรีพัฒน์",
-                            existState: "-",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 172 รายการ"
-                        },
-                        {
-                            subName: "59 CRC ศูนย์วิจัยทางคลินิก",
-                            existState: "ไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ",
-                            conditionState: "-",
-                            ownerState: "ระบุผู้ครอบครองไม่ครบถ้วน",
-                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 2 รายการ"
-                        },
-                        {
-                            subName: "68 CMEX ศูนย์ความเป็นเลิศ",
-                            existState: "-",
-                            conditionState: "-",
-                            ownerState: "-",
-                            borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 39 รายการ"
-                        }
-                    ]
-                }
-            ];
-
-            const remainingNames = [
-                "คณะสื่อสารมวลชน", "คณะทันตแพทยศาสตร์", "คณะนิติศาสตร์", "คณะบริหารธุรกิจ", "คณะพยาบาลศาสตร์", 
-                "คณะมนุษยศาสตร์", "คณะวิศวกรรมศาสตร์", "คณะวิทยาศาสตร์", "คณะสถาปัตยกรรมศาสตร์", "คณะสังคมศาสตร์", 
-                "คณะสัตวแพทยศาสตร์", "คณะอุตสาหกรรมเกษตร", "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", "สำนักงานมหาวิทยาลัย", 
-                "สำนักหอสมุด", "สำนักบริการเทคโนโลยีสารสนเทศ", "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", "สถาบันวิจัยสังคม", 
-                "ศูนย์บริหารกายภาพและสิ่งแวดล้อม", "ศูนย์ส่งเสริมศิลปวัฒนธรรม", "สำนักประกันคุณภาพการศึกษา", 
-                "หน่วยตรวจสอบภายใน", "ศูนย์ส่งเสริมการวิจัย", "สถาบันภาษา", "สำนักบริการวิชาการ", "ศูนย์วิจัยพลังงาน", "วิทยาลัยนานาชาติ"
-            ];
-
-            remainingNames.forEach((uName, index) => {
-                const id = unitsData.length + 1;
-                unitsData.push({
-                    id: id,
-                    name: uName,
-                    colH: `${(id % 6) + 1}`,
-                    subUnits: [
-                        {
-                            subName: `สำนักงานส่วนงาน (${uName})`,
-                            existState: id % 2 === 0 ? "ตรวจนับถูกต้องครบถ้วน" : "ไม่รายงานความมีอยู่จริง 1 รายการ",
-                            conditionState: id % 3 === 0 ? "ไม่รายงานสภาพครุภัณฑ์ 2 รายการ" : "-",
-                            ownerState: id % 4 === 0 ? "ไม่ระบุชื่อผู้ครอบครอง 4 รายการ" : "-",
-                            borrowState: id % 2 !== 0 ? "หลักฐานการยืม-คืนครบถ้วน" : "แนบหลักฐานไม่ครบถ้วน 2 รายการ"
-                        }
-                    ]
-                });
-            });
-        }
-
-        // Parse "Sheet3": Group rows into units and intelligently collect Col H from any sub-row
-        function parseSheet3CSV(csvText) {
-            const lines = csvText.split('\n');
-            let parsedUnits = [];
-            let currentUnit = null;
-
-            lines.forEach((line, index) => {
-                if (index < 1 || !line.trim()) return; // Skip title row
-                const cols = parseCSVLine(line).map(c => c.replace(/^"|"$/g, '').trim());
-                
-                const seq = cols[0];
-                const unitName = cols[1];
-                const subName = cols[2];
-                const existState = cols[3] || '-';
-                const conditionState = cols[4] || '-';
-                const ownerState = cols[5] || '-';
-                const borrowState = cols[6] || '-';
-                const colH = cols[7] || '';
-
-                // New Main Unit detected (Seq or UnitName is populated)
-                if ((seq && !isNaN(parseInt(seq))) || (unitName && unitName !== '-' && unitName !== 'ส่วนงาน')) {
                     currentUnit = {
                         id: parsedUnits.length + 1,
                         seq: seq || (parsedUnits.length + 1),
                         name: unitName,
-                        colH: colH || '',
+                        colH: colH || '', // Read Col H strictly from this row!
                         subUnits: []
                     };
                     parsedUnits.push(currentUnit);
                 }
 
-                // Add Sub-unit row
+                // Append Sub-unit item row
                 if (currentUnit && subName && subName !== 'บัญชี/หน่วยงาน') {
                     currentUnit.subUnits.push({
                         subName: subName,
@@ -605,11 +399,6 @@
                         ownerState: ownerState,
                         borrowState: borrowState
                     });
-
-                    // Collect Col H if it's placed on a sub-row instead of the header row!
-                    if (colH && !currentUnit.colH) {
-                        currentUnit.colH = colH;
-                    }
                 }
             });
 
@@ -618,7 +407,7 @@
             }
         }
 
-        // Backup Demo Data (Matches exactly the 32 units structure of Sheet3)
+        // Backup Demo Data (Matches exactly the 32 units structure)
         function generateDemoData() {
             globalSuggestions = {
                 "1": "ให้ส่วนงานเร่งรัดปรับปรุงรายการครุภัณฑ์ในระบบทะเบียนสินทรัพย์ให้ถูกต้องตรงกับความเป็นจริง และรายงานความมีอยู่จริงของครุภัณฑ์ให้ครบถ้วน",
@@ -633,10 +422,10 @@
                 { id: 1, name: "คณะเกษตรศาสตร์", colH: "1, 2, 3, 6", subUnits: [
                     { subName: "08-เกษตรฯ", existState: "จำหน่ายแล้ว 9 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 88 รายการ" },
                     { subName: "63-ATSC ศูนย์บริการวิชาการและถ่ายทอดเทคโนโลยีการเกษตร", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 4 รายการ" },
-                    { subName: "44-ศูนย์วิจัยเทคโนโลยีหลังการเก็บเกี่ยว", existState: "บันทึกรายการซ้ำ 3 รายการ เนื่องจากโอนครุภัณฑ์ไปยังบัญชีคณะฯ แล้ว แต่ยังไม่ได้ปรับปรุงรายการในบัญชีศูนย์ฯ ทำให้รายการครุภัณฑ์ยังค้างอยู่ในระบบ", conditionState: "-", ownerState: "-", borrowState: "-" }
+                    { subName: "44-ศูนย์วิจัยเทคโนโลยีหลังการเก็บเกี่ยว", existState: "บันทึกรายการซ้ำ 3 รายการ เนื่องจากโอนครุภัณฑ์ไปยังบัญชีคณะฯ แล้ว แต่ยังไม่ได้ปรับปรุงรายการในบัญชีศูนย์ฯ ทำให้รายการครุภัณฑ์ยังค้างอยู่ในระบบ ซึ่งซ้ำซ้อนกับรายการในบัญชีคณะฯ", conditionState: "-", ownerState: "-", borrowState: "-" }
                 ]},
                 { id: 2, name: "คณะเทคนิคการแพทย์", colH: "5", subUnits: [
-                    { subName: "11-เทคนิคฯ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 105 รายการ..." },
+                    { subName: "11-เทคนิคฯ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนครุภัณฑ์ไม่ครบถ้วน 105 รายการ เจ้าหน้าที่ชี้แจงว่า มีการควบคุมการนำไปใช้งานและติดตามการนำส่งคืน โดยเจ้าหน้าที่ได้รับมอบหมายให้รับผิดชอบครุภัณฑ์นั้น ทั้งนี้ คณะฯ รับทราบแนวปฏิบัติและได้ดำเนินการปรับปรุงกระบวนการยืม-คืนตามกฎระเบียบแล้ว" },
                     { subName: "25-AMS.CSC.ศูนย์บริการเทคนิคการแพทย์คลินิก", existState: "-", conditionState: "-", ownerState: "-", borrowState: "หลักฐานการยืม-คืน ไม่ระบุระยะเวลายืม-คืน" }
                 ]},
                 { id: 3, name: "คณะเภสัชศาสตร์", colH: "1, 3", subUnits: [
@@ -648,26 +437,15 @@
                 ]},
                 { id: 5, name: "คณะแพทยศาสตร์", colH: "1, 2, 4, 6", subUnits: [
                     { subName: "07-แพทย์ฯ", existState: "จำหน่ายแล้ว 53 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
-                    { subName: "29-ศรีพัทธ์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 172 รายการ" },
+                    { subName: "29-ศรีพัฒน์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 172 รายการ" },
                     { subName: "59 CRC ศูนย์วิจัยทางคลินิก", existState: "ไม่รายงานความมีอยู่จริงของครุภัณฑ์ 2 รายการ", conditionState: "-", ownerState: "ระบุผู้ครอบครองไม่ครบถ้วน", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 2 รายการ" },
-                    { subName: "68 CMEX ศูนย์ความเป็นเลิศ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 39 รายการ" },
-                    { subName: "92-แพทย์บำรุงฯ", existState: "จำหน่ายแล้ว 64 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" },
-                    { subName: "97-แพทย์2 (เงินรายได้)", existState: "จำหน่ายแล้ว 2 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" }
-                ]},
-                { id: 6, name: "คณะสื่อสารมวลชน", colH: "5", subUnits: [{ subName: "18-สื่อสาร", existState: "-", conditionState: "-", ownerState: "-", borrowState: "หลักฐานการยืม-คืน ไม่ระบุวัตถุประสงค์" }] },
-                { id: 7, name: "คณะทันตแพทยศาสตร์", colH: "1", subUnits: [{ subName: "09-ทันตแพทย์ฯ", existState: "จำหน่ายแล้ว 65 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่พบครุภัณฑ์ 1 รายการ", conditionState: "-", ownerState: "-", borrowState: "-" }] },
-                { id: 8, name: "คณะนิติศาสตร์", colH: "5", subUnits: [{ subName: "21-นิติศาสตร์", existState: "-", conditionState: "-", ownerState: "-", borrowState: "ไม่ยืม-คืนครุภัณฑ์ โดยไม่ระบุเหตุผล 1 รายการ" }] },
-                { id: 9, name: "คณะบริหารธุรกิจ", colH: "5", subUnits: [{ subName: "15-บริหารธุรกิจ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 11 รายการ" }] },
-                { id: 10, name: "คณะพยาบาลศาสตร์", colH: "4, 5", subUnits: [
-                    { subName: "12-พยาบาลฯ", existState: "-", conditionState: "-", ownerState: "ระบุผู้ครอบครองไม่ครบถ้วน", borrowState: "ไม่ยืม-คืนครุภัณฑ์ โดยไม่ระบุเหตุผล 114 รายการ" },
-                    { subName: "27-NSC ศูนย์บริการพยาบาล", existState: "จำหน่ายแล้ว 1 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์", conditionState: "-", ownerState: "-", borrowState: "-" }
-                ]},
-                { id: 11, name: "คณะมนุษยศาสตร์", colH: "1, 3, 5", subUnits: [{ subName: "01-มนุษย์ฯ", existState: "จำหน่ายแล้ว 4 รายการ แต่ยังไม่ได้ปรับปรุงรายการในทะเบียนสินทรัพย์ และไม่พบครุภัณฑ์ โดยไม่ระบุ...", conditionState: "ไม่รายงานสภาพครุภัณฑ์ จำนวน 1 รายการ", ownerState: "-", borrowState: "ไม่ยืม-คืนครุภัณฑ์ โดยไม่ระบุเหตุผล 352 รายการ และแนบหลักฐานการยืม-คืน ไม่ครบถ้วน 5 รายการ" }] }
+                    { subName: "68 CMEX ศูนย์ความเป็นเลิศ", existState: "-", conditionState: "-", ownerState: "-", borrowState: "แนบหลักฐานการยืม-คืนไม่ครบถ้วน 39 รายการ" }
+                ]}
             ];
 
-            // Fill up to 32 units dynamically matching Sheet3 total count
             const remaining = [
-                "คณะวิศวกรรมศาสตร์", "คณะวิทยาศาสตร์", "คณะวิจิตรศิลป์", "คณะศึกษาศาสตร์", "คณะสังคมศาสตร์", 
+                "คณะสื่อสารมวลชน", "คณะทันตแพทยศาสตร์", "คณะนิติศาสตร์", "คณะบริหารธุรกิจ", "คณะพยาบาลศาสตร์", 
+                "คณะมนุษยศาสตร์", "คณะวิศวกรรมศาสตร์", "คณะวิทยาศาสตร์", "คณะวิจิตรศิลป์", "คณะศึกษาศาสตร์", "คณะสังคมศาสตร์", 
                 "คณะสถาปัตยกรรมศาสตร์", "คณะอุตสาหกรรมเกษตร", "คณะรัฐศาสตร์และรัฐประศาสนศาสตร์", "วิทยาลัยศิลปะ สื่อ และเทคโนโลยี", 
                 "วิทยาลัยการศึกษาตลอดชีวิต", "บัณฑิตวิทยาลัย", "สำนักงานมหาวิทยาลัย", "สำนักหอสมุด", 
                 "สำนักบริการเทคโนโลยีสารสนเทศ", "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยี", "สถาบันวิจัยสังคม", 
@@ -675,13 +453,13 @@
             ];
 
             remaining.forEach((uName, idx) => {
-                const id = idx + 12;
+                const id = idx + 6;
                 full32Units.push({
                     id: id,
                     name: uName,
                     colH: `${(id % 4) + 1}`,
                     subUnits: [{
-                        subName: `สำนักงาน (${uName})`,
+                        subName: `สำนักงานส่วนงาน (${uName})`,
                         existState: id % 3 === 0 ? "ตรวจนับเรียบร้อย" : "-",
                         conditionState: id % 2 === 0 ? "รายงานสภาพครบถ้วน" : "-",
                         ownerState: "-",
@@ -705,7 +483,7 @@
                 btn.onclick = () => selectUnit(idx);
                 
                 const isSelected = idx === currentUnitIndex;
-                btn.className = `w-full text-left p-3 rounded-lg text-xs font-medium transition flex items-center justify-between ${
+                btn.className = `w-full text-left p-2.5 rounded-lg text-xs transition flex items-center justify-between ${
                     isSelected 
                         ? 'bg-slate-900 text-white font-semibold shadow-sm' 
                         : 'text-slate-700 hover:bg-slate-100 bg-white border border-slate-100'
@@ -714,7 +492,7 @@
                 btn.innerHTML = `
                     <div class="truncate pr-2">
                         <span class="block ${isSelected ? 'text-white' : 'text-slate-900'}">${unit.id || (idx+1)}. ${unit.name}</span>
-                        <span class="text-[10px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}">ข้อเสนอแนะ Col H: [ ${unit.colH || 'ไม่มี'} ]</span>
+                        <span class="text-[10px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}">ข้อเสนอแนะ: ${unit.colH ? '[ ข้อ ' + unit.colH + ' ]' : '[ ไม่มี ]'}</span>
                     </div>
                     <i class="fa-solid fa-chevron-right text-[10px] ${isSelected ? 'text-white' : 'text-slate-300'}"></i>
                 `;
@@ -737,28 +515,28 @@
             
             const unit = unitsData[index];
             
-            // Populate Main Report Headers
-            document.getElementById('report-unit-name').innerText = `ส่วนงาน: ${unit.name}`;
+            // Display Only Unit Name in Title (20pt)
+            document.getElementById('report-unit-name').innerText = unit.name;
 
-            // Populate Table Items
+            // Populate Table Rows (12pt body)
             const tableBody = document.getElementById('table-items-body');
             tableBody.innerHTML = '';
 
             unit.subUnits.forEach((sub) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 pdf-table-row divide-x divide-slate-200 text-xs";
                 
+                // Content of "บัญชี/หน่วยงาน" set explicitly to text-align: left;
                 tr.innerHTML = `
-                    <td class="px-3 py-3 text-slate-800 font-medium align-top bg-white">${sub.subName}</td>
-                    <td class="px-3 py-3 text-slate-700 align-top leading-relaxed">${sub.existState}</td>
-                    <td class="px-3 py-3 text-slate-700 align-top leading-relaxed text-center">${sub.conditionState}</td>
-                    <td class="px-3 py-3 text-slate-700 align-top leading-relaxed text-center">${sub.ownerState}</td>
-                    <td class="px-3 py-3 text-slate-700 align-top leading-relaxed">${sub.borrowState}</td>
+                    <td style="text-align: left !important; font-weight: 500;">${sub.subName}</td>
+                    <td style="text-align: left;">${sub.existState}</td>
+                    <td style="text-align: center;">${sub.conditionState}</td>
+                    <td style="text-align: center;">${sub.ownerState}</td>
+                    <td style="text-align: left;">${sub.borrowState}</td>
                 `;
                 tableBody.appendChild(tr);
             });
 
-            // Parse Column H numbers (e.g. "1, 2, 3, 6" => ["1", "2", "3", "6"])
+            // Parse Column H numbers
             const selectedNumbers = unit.colH
                 ? String(unit.colH).split(/[\s,]+/).map(n => n.trim()).filter(n => n !== '')
                 : [];
@@ -767,7 +545,7 @@
             renderCategorizedSuggestions(selectedNumbers);
         }
 
-        // Categorize & Render Suggestions into Specified Topics
+        // Categorize & Render Suggestions into 4 Specified Topics
         function renderCategorizedSuggestions(numbers) {
             const t1Nums = numbers.filter(n => n === '1' || n === '2');
             const t2Nums = numbers.filter(n => n === '3');
@@ -780,12 +558,13 @@
             renderTopicContent('topic-4-card', 'topic-4-content', t4Nums);
         }
 
-        // Helper to Render Each Topic Box & Hide if Empty
+        // Helper to Render Each Topic Box & Hide if Empty (No [ข้อ X] tags)
         function renderTopicContent(cardId, elementId, numsList) {
             const card = document.getElementById(cardId);
             const container = document.getElementById(elementId);
             container.innerHTML = '';
 
+            // Hide section completely if there are no suggestions for this topic
             if (numsList.length === 0) {
                 card.classList.add('hidden');
                 return;
@@ -795,32 +574,20 @@
 
             if (numsList.length === 1) {
                 const num = numsList[0];
-                const text = globalSuggestions[num] || `ข้อเสนอแนะข้อที่ ${num}`;
-                container.innerHTML = `<p class="text-slate-800 leading-relaxed text-base">${text}</p>`;
+                const text = globalSuggestions[num] || `ข้อเสนอแนะรายการที่ ${num}`;
+                container.innerHTML = `<p class="text-content-body">${text}</p>`;
             } else {
                 const listHtml = numsList.map((num, i) => {
-                    const text = globalSuggestions[num] || `ข้อเสนอแนะข้อที่ ${num}`;
-                    return `<li class="leading-relaxed mb-1.5 text-base"><span class="font-bold text-slate-900 mr-1.5">${i + 1}.</span> ${text}</li>`;
+                    const text = globalSuggestions[num] || `ข้อเสนอแนะรายการที่ ${num}`;
+                    return `<div class="text-content-body mb-1"><span class="font-bold mr-1.5">${i + 1}.</span>${text}</div>`;
                 }).join('');
-                container.innerHTML = `<ol class="list-none space-y-1">${listHtml}</ol>`;
+                container.innerHTML = listHtml;
             }
         }
 
-        // Export Single Unit Page to PDF
+        // Export Single Unit Page using Browser Native Print API for 100% crisp Thai Font
         function exportToPDF() {
-            const element = document.getElementById('report-container');
-            const unitName = unitsData[currentUnitIndex] ? unitsData[currentUnitIndex].name : 'รายงานครุภัณฑ์';
-            
-            const opt = {
-                margin:       [10, 10, 10, 10],
-                filename:     `รายงานสรุปครุภัณฑ์_${unitName}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, logging: false },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
-            };
-
-            html2pdf().set(opt).from(element).save();
+            window.print();
         }
 
         // App Initializer
